@@ -1,0 +1,55 @@
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--f-ui);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  border-radius: var(--r-1);
+  padding: 3px 7px;
+  line-height: 1.1;
+  white-space: nowrap;
+}
+
+.dense {
+  font-size: 10px;
+  padding: 2px 5px;
+}
+
+.dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 1px;
+  flex-shrink: 0;
+}
+
+/* tones */
+.modifier {
+  color: var(--modifier);
+  background: var(--modifier-dim);
+  border: 1px solid var(--modifier-line);
+}
+.modifier .dot { background: var(--modifier); }
+
+.signal {
+  color: var(--signal);
+  background: var(--signal-dim);
+  border: 1px solid var(--signal-line);
+}
+.signal .dot { background: var(--signal); }
+
+.warn {
+  color: var(--warn);
+  background: var(--warn-dim);
+  border: 1px solid var(--warn-line);
+}
+.warn .dot { background: var(--warn); }
+
+.good {
+  color: var(--good);
+  background: var(--good-dim);
+  border: 1px solid var(--good-dim);
+}
+.good .dot { background: var(--good); }

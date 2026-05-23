@@ -1,0 +1,12 @@
+.scroll {
+  height: calc(100% - 158px);
+  padding-top: 12px;
+  padding-bottom: 40px;
+}
+
+.empty {
+  padding: 40px 24px;
+  text-align: center;
+  color: var(--fg-mute);
+  font-size: 13px;
+}

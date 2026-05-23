@@ -1,0 +1,62 @@
+.strip {
+  margin: 0 12px 12px;
+  padding: 10px 14px;
+  background: linear-gradient(180deg, var(--surface-1), transparent);
+  border-top: 1px solid var(--border-faint);
+  border-bottom: 1px solid var(--border-faint);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.stats {
+  display: flex;
+  gap: 14px;
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  line-height: 1;
+}
+
+.statN {
+  font-family: var(--f-mono);
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--fg);
+  letter-spacing: -0.01em;
+}
+
+.statHighlight {
+  color: var(--signal);
+}
+
+.statLabel {
+  font-family: var(--f-mono);
+  font-size: 9px;
+  margin-top: 4px;
+  color: var(--fg-dim);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.expandBtn {
+  appearance: none;
+  border: 1px solid var(--border-faint);
+  background: var(--surface-1);
+  border-radius: var(--r-2);
+  color: var(--fg-soft);
+  padding: 5px 9px;
+  font-family: var(--f-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background-color 0.12s ease;
+}
+
+.expandBtn:active {
+  background: var(--surface-3);
+}

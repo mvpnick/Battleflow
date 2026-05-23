@@ -1,0 +1,149 @@
+/* ─────────────────────────────────────────────────────────────
+   BATTLEFLOW · DESIGN TOKENS
+   Dark "field manual" surface system. Original — no GW trade dress.
+   ───────────────────────────────────────────────────────────── */
+
+:root {
+  /* SURFACE — deep oil black with cool tint */
+  --bg-canvas:     #0a0b0e;       /* outside of any panel */
+  --bg-app:        #0e1014;       /* phone background */
+  --surface-1:     #14171d;       /* unit card / drawer */
+  --surface-2:     #1a1e26;       /* nested rows */
+  --surface-3:     #21262f;       /* hover / pressed */
+  --overlay:       rgba(8,10,14,0.72);
+
+  /* BORDERS */
+  --border-faint:  #1d212a;
+  --border:        #262b36;
+  --border-strong: #3a4150;
+  --hairline:      rgba(255,255,255,0.06);
+
+  /* TEXT */
+  --fg:            #ebecef;
+  --fg-soft:       #c7cad1;
+  --fg-mute:       #8a8f9b;
+  --fg-dim:        #5b6170;
+  --fg-stat:       #b6bbc5;
+
+  /* SIGNAL — keep chroma matched, vary hue */
+  --signal:        oklch(0.79 0.13 75);   /* amber — CP, active, primary */
+  --signal-dim:    oklch(0.79 0.13 75 / 0.16);
+  --signal-line:   oklch(0.79 0.13 75 / 0.32);
+
+  --modifier:      oklch(0.78 0.07 220);  /* steel cyan — modifiers */
+  --modifier-dim:  oklch(0.78 0.07 220 / 0.14);
+  --modifier-line: oklch(0.78 0.07 220 / 0.30);
+
+  --warn:          oklch(0.71 0.16 30);   /* rust — once/battle, hazard */
+  --warn-dim:      oklch(0.71 0.16 30 / 0.16);
+  --warn-line:     oklch(0.71 0.16 30 / 0.32);
+
+  --good:          oklch(0.78 0.10 160);  /* cool green — buff/positive */
+  --good-dim:      oklch(0.78 0.10 160 / 0.14);
+
+  --melee:         oklch(0.78 0.07 30);   /* warm tag */
+  --ranged:        oklch(0.78 0.08 250);  /* cool tag */
+
+  /* TYPE */
+  --f-display: "Instrument Serif", "Iowan Old Style", Georgia, serif;
+  --f-ui:      "Geist", -apple-system, "Helvetica Neue", system-ui, sans-serif;
+  --f-mono:    "JetBrains Mono", "SF Mono", ui-monospace, monospace;
+
+  /* SCALE — mobile */
+  --t-micro: 10px;     /* small caps eyebrow */
+  --t-xs:    11px;     /* condition pills, meta */
+  --t-sm:    12px;     /* secondary copy */
+  --t-base:  14px;     /* row text */
+  --t-md:    15px;     /* unit name body */
+  --t-lg:    17px;     /* unit name */
+  --t-xl:    22px;     /* nav title */
+  --t-2xl:   28px;     /* phase display */
+
+  /* SPACING */
+  --sp-1: 4px;
+  --sp-2: 6px;
+  --sp-3: 8px;
+  --sp-4: 10px;
+  --sp-5: 12px;
+  --sp-6: 16px;
+  --sp-7: 20px;
+  --sp-8: 24px;
+
+  /* RADIUS */
+  --r-1: 4px;
+  --r-2: 6px;
+  --r-3: 8px;
+  --r-4: 10px;
+  --r-5: 14px;
+  --r-6: 20px;
+
+  /* ELEVATION */
+  --elev-0: none;
+  --elev-1: 0 1px 0 rgba(255,255,255,0.03) inset, 0 1px 2px rgba(0,0,0,0.3);
+  --elev-2: 0 1px 0 rgba(255,255,255,0.04) inset, 0 6px 18px rgba(0,0,0,0.4);
+  --elev-drawer: 0 -20px 40px rgba(0,0,0,0.5), 0 -1px 0 var(--border) inset;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   PRIMITIVES — reusable atomic classes
+   ───────────────────────────────────────────────────────────── */
+
+.bf-app {
+  background: var(--bg-app);
+  color: var(--fg);
+  font-family: var(--f-ui);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  letter-spacing: -0.005em;
+  width: 100%;
+  height: 100%;
+  position: relative;
+  overflow: hidden;
+}
+
+.bf-scroll {
+  height: 100%;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.bf-scroll::-webkit-scrollbar { display: none; }
+
+/* small caps eyebrow — used for section labels (WEAPONS / ABILITIES / etc) */
+.bf-eyebrow {
+  font-family: var(--f-ui);
+  font-size: var(--t-micro);
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--fg-dim);
+}
+
+/* mono stat block */
+.bf-stat {
+  font-family: var(--f-mono);
+  font-size: var(--t-sm);
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  color: var(--fg-stat);
+}
+.bf-stat .lbl { color: var(--fg-dim); margin-right: 2px; }
+.bf-stat .dot { color: var(--border-strong); margin: 0 6px; }
+
+/* divider — used inside unit cards */
+.bf-rule {
+  height: 1px;
+  background: var(--border-faint);
+  border: 0;
+  margin: 0;
+}
+
+/* tap target safety */
+.bf-tap { min-height: 44px; }
+
+/* clickable affordance */
+.bf-press {
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background-color .12s ease;
+}
+.bf-press:active { background: var(--surface-3); }
