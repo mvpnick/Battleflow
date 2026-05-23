@@ -51,7 +51,7 @@ export type Unit = {
 export type Roster = Partial<Record<PhaseId, Unit[]>>
 
 export type DrawerPayload = {
-  kind: 'weapon' | 'ability' | 'stratagem' | 'modifier'
+  kind: 'weapon' | 'ability' | 'stratagem'
   data: Weapon | Rule | Strat
   unit: Unit
 } | null

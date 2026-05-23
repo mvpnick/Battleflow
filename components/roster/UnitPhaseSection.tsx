@@ -1,6 +1,3 @@
-'use client'
-
-import { useState } from 'react'
 import { Unit, DrawerPayload } from '@/lib/types'
 import { WeaponProfileRow } from './WeaponProfileRow'
 import { RuleItem } from './RuleItem'
@@ -9,7 +6,8 @@ import styles from './UnitPhaseSection.module.css'
 
 interface Props {
   unit: Unit
-  defaultOpen?: boolean
+  open: boolean
+  onToggle: () => void
   onOpenDetail: (payload: DrawerPayload) => void
 }
 
@@ -34,9 +32,7 @@ function CountChip({ n, label, tone }: { n: number; label: string; tone?: 'signa
   )
 }
 
-export function UnitPhaseSection({ unit, defaultOpen = false, onOpenDetail }: Props) {
-  const [open, setOpen] = useState(defaultOpen)
-
+export function UnitPhaseSection({ unit, open, onToggle, onOpenDetail }: Props) {
   const counts = {
     weapons: unit.weapons?.length ?? 0,
     rules: unit.abilities?.length ?? 0,
@@ -45,11 +41,11 @@ export function UnitPhaseSection({ unit, defaultOpen = false, onOpenDetail }: Pr
 
   return (
     <div className={styles.card}>
-      <div
+      <button
+        type="button"
         className={`bf-press ${styles.header}`}
-        onClick={() => setOpen(o => !o)}
+        onClick={onToggle}
       >
-        {/* row 1: caret + name + tags */}
         <div className={styles.row1}>
           <span className={styles.caret} style={{ transform: open ? 'rotate(90deg)' : 'rotate(0deg)' }}>
             <svg width="8" height="10" viewBox="0 0 8 10">
@@ -64,7 +60,6 @@ export function UnitPhaseSection({ unit, defaultOpen = false, onOpenDetail }: Pr
           </div>
         </div>
 
-        {/* row 2: role + model count */}
         <div className={styles.row2}>
           <span className={styles.role}>{unit.role}</span>
           <span className={styles.divider}>·</span>
@@ -74,18 +69,17 @@ export function UnitPhaseSection({ unit, defaultOpen = false, onOpenDetail }: Pr
           </span>
         </div>
 
-        {/* row 3: count chips + hot modifiers (collapsed only) */}
         {!open && (
           <div className={styles.row3}>
             <CountChip n={counts.weapons} label="weapons" />
             <CountChip n={counts.rules} label="rules" />
             {counts.strat > 0 && <CountChip n={counts.strat} label="strat" tone="signal" />}
-            {unit.hot?.map((h, i) => (
-              <span key={i} className={styles.hotChip}>{h}</span>
+            {unit.hot?.map(h => (
+              <span key={h} className={styles.hotChip}>{h}</span>
             ))}
           </div>
         )}
-      </div>
+      </button>
 
       {open && (
         <div className={styles.body}>
@@ -135,8 +129,8 @@ export function UnitPhaseSection({ unit, defaultOpen = false, onOpenDetail }: Pr
             <>
               <hr className="bf-rule" />
               <SubSection label="Reminders">
-                {unit.reminders.map((r, i) => (
-                  <div key={i} className={styles.reminder}>
+                {unit.reminders.map((r) => (
+                  <div key={r.text} className={styles.reminder}>
                     <span className={styles.reminderIcon}>※</span>
                     <span>{r.text}</span>
                   </div>

@@ -11,7 +11,8 @@ interface Props {
 
 export function StratagemItem({ strat, unit, onOpen }: Props) {
   return (
-    <div
+    <button
+      type="button"
       className={`bf-press ${styles.row}`}
       onClick={() => onOpen({ kind: 'stratagem', data: strat, unit })}
     >
@@ -28,6 +29,6 @@ export function StratagemItem({ strat, unit, onOpen }: Props) {
         {strat.once === 'battle' && <ConditionPill kind="once">Once / battle</ConditionPill>}
         {strat.once === 'phase' && <ConditionPill kind="once">Once / phase</ConditionPill>}
       </div>
-    </div>
+    </button>
   )
 }

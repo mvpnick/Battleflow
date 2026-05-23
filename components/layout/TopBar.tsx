@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import styles from './TopBar.module.css'
 
 interface Props {
@@ -11,7 +12,7 @@ export function TopBar({ rosterName, points, cp, cpMax }: Props) {
   return (
     <div className={styles.bar}>
       <div className={styles.left}>
-        <div className={styles.icon}>◬</div>
+        <Link href="/" className={styles.icon} aria-label="Home">◬</Link>
         <div className={styles.meta}>
           <span className={styles.rosterLabel}>Roster</span>
           <span className={styles.rosterName}>{rosterName} · {points} pts</span>

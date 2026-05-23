@@ -8,6 +8,11 @@
 }
 
 .header {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  width: 100%;
+  text-align: left;
   padding: 12px 14px;
   display: flex;
   flex-direction: column;

@@ -12,7 +12,7 @@ import styles from './PhaseReferenceScreen.module.css'
 
 export function PhaseReferenceScreen() {
   const [phase, setPhase] = useState<PhaseId>('fight')
-  const [openUnitIds, setOpenUnitIds] = useState<Set<string>>(new Set(['assault-vets']))
+  const [openUnitIds, setOpenUnitIds] = useState<Set<string>>(new Set())
   const [drawer, setDrawer] = useState<DrawerPayload>(null)
 
   const units = SAMPLE_ROSTER[phase] ?? []
@@ -20,6 +20,15 @@ export function PhaseReferenceScreen() {
   function handlePhaseChange(id: PhaseId) {
     setPhase(id)
     setDrawer(null)
+    setOpenUnitIds(new Set())
+  }
+
+  function handleToggleUnit(id: string) {
+    setOpenUnitIds(prev => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id); else next.add(id)
+      return next
+    })
   }
 
   function handleExpandAll() {
@@ -38,7 +47,8 @@ export function PhaseReferenceScreen() {
           <UnitPhaseSection
             key={u.id}
             unit={u}
-            defaultOpen={openUnitIds.has(u.id)}
+            open={openUnitIds.has(u.id)}
+            onToggle={() => handleToggleUnit(u.id)}
             onOpenDetail={setDrawer}
           />
         ))}

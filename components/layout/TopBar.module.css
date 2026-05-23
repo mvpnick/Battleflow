@@ -28,6 +28,7 @@
   color: var(--signal);
   font-weight: 700;
   flex-shrink: 0;
+  text-decoration: none;
 }
 
 .meta {

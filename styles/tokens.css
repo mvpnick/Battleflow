@@ -45,9 +45,9 @@
   --ranged:        oklch(0.78 0.08 250);
 
   /* TYPE */
-  --f-display: "Instrument Serif", "Iowan Old Style", Georgia, serif;
-  --f-ui:      "Geist", -apple-system, "Helvetica Neue", system-ui, sans-serif;
-  --f-mono:    "JetBrains Mono", "SF Mono", ui-monospace, monospace;
+  --f-display: var(--font-display), "Iowan Old Style", Georgia, serif;
+  --f-ui:      var(--font-geist), -apple-system, "Helvetica Neue", system-ui, sans-serif;
+  --f-mono:    var(--font-mono), "SF Mono", ui-monospace, monospace;
 
   /* SCALE */
   --t-micro: 10px;
@@ -99,6 +99,8 @@
   height: 100%;
   position: relative;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
 .bf-scroll {

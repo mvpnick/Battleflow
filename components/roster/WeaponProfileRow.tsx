@@ -12,7 +12,8 @@ interface Props {
 
 export function WeaponProfileRow({ weapon, unit, onOpen }: Props) {
   return (
-    <div
+    <button
+      type="button"
       className={`bf-press ${styles.row}`}
       onClick={() => onOpen({ kind: 'weapon', data: weapon, unit })}
     >
@@ -33,14 +34,14 @@ export function WeaponProfileRow({ weapon, unit, onOpen }: Props) {
 
       {weapon.mods.length > 0 && (
         <div className={styles.mods}>
-          {weapon.mods.map((m, i) => (
-            <div key={i} className={styles.modRow}>
+          {weapon.mods.map(m => (
+            <div key={m.label} className={styles.modRow}>
               <ModifierBadge label={m.label} dense />
               {m.cond && <span className={styles.modCond}>{m.cond}</span>}
             </div>
           ))}
         </div>
       )}
-    </div>
+    </button>
   )
 }

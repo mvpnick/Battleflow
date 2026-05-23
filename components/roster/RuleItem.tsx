@@ -10,7 +10,8 @@ interface Props {
 
 export function RuleItem({ rule, unit, onOpen }: Props) {
   return (
-    <div
+    <button
+      type="button"
       className={`bf-press ${styles.row}`}
       onClick={() => onOpen({ kind: 'ability', data: rule, unit })}
     >
@@ -24,6 +25,6 @@ export function RuleItem({ rule, unit, onOpen }: Props) {
           <ConditionPill kind="cond">{rule.cond}</ConditionPill>
         </div>
       )}
-    </div>
+    </button>
   )
 }
