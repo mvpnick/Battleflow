@@ -36,6 +36,9 @@ yarn-error.log*
 # vercel
 .vercel
 
+# bsdata ingest download cache (raw XML, sha-keyed; NOT the committed public/data artifacts)
+/.bsdata-cache
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

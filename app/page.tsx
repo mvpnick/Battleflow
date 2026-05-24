@@ -25,23 +25,37 @@ export default function Home() {
           Phase-filtered wargame reference
         </p>
       </div>
-      <Link
-        href="/roster"
-        style={{
-          fontFamily: 'var(--f-mono)',
-          fontSize: 12,
-          letterSpacing: '0.08em',
-          textTransform: 'uppercase',
-          color: 'var(--signal)',
-          background: 'var(--signal-dim)',
-          border: '1px solid var(--signal-line)',
-          borderRadius: 'var(--r-2)',
-          padding: '10px 20px',
-          textDecoration: 'none',
-        }}
-      >
-        View Sample Roster →
-      </Link>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10, alignItems: 'center' }}>
+        <Link
+          href="/factions"
+          style={{
+            fontFamily: 'var(--f-mono)',
+            fontSize: 12,
+            letterSpacing: '0.08em',
+            textTransform: 'uppercase',
+            color: 'var(--signal)',
+            background: 'var(--signal-dim)',
+            border: '1px solid var(--signal-line)',
+            borderRadius: 'var(--r-2)',
+            padding: '10px 20px',
+            textDecoration: 'none',
+          }}
+        >
+          Browse Factions →
+        </Link>
+        <Link
+          href="/roster"
+          style={{
+            fontFamily: 'var(--f-mono)',
+            fontSize: 11,
+            letterSpacing: '0.06em',
+            color: 'var(--fg-mute)',
+            textDecoration: 'none',
+          }}
+        >
+          View sample roster
+        </Link>
+      </div>
     </main>
   )
 }

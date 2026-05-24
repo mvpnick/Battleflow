@@ -2,6 +2,7 @@ import { Unit, DrawerPayload } from '@/lib/types'
 import { WeaponProfileRow } from './WeaponProfileRow'
 import { RuleItem } from './RuleItem'
 import { StratagemItem } from './StratagemItem'
+import { StatRow } from '@/components/ui/StatRow'
 import styles from './UnitPhaseSection.module.css'
 
 interface Props {
@@ -83,16 +84,25 @@ export function UnitPhaseSection({ unit, open, onToggle, onOpenDetail }: Props) 
 
       {open && (
         <div className={styles.body}>
-          {unit.weapons?.length > 0 && (
-            <SubSection label="Weapons" count={unit.weapons.length}>
-              <div className={styles.itemList}>
-                {unit.weapons.map((w, i) => (
-                  <div key={w.name} className={i > 0 ? styles.itemSep : undefined}>
-                    <WeaponProfileRow weapon={w} unit={unit} onOpen={onOpenDetail} />
-                  </div>
-                ))}
-              </div>
+          {unit.stats && Object.keys(unit.stats).length > 0 && (
+            <SubSection label="Profile">
+              <StatRow stats={unit.stats} />
             </SubSection>
+          )}
+
+          {unit.weapons?.length > 0 && (
+            <>
+              {unit.stats && Object.keys(unit.stats).length > 0 && <hr className="bf-rule" />}
+              <SubSection label="Weapons" count={unit.weapons.length}>
+                <div className={styles.itemList}>
+                  {unit.weapons.map((w, i) => (
+                    <div key={`${w.kind}-${w.name}-${i}`} className={i > 0 ? styles.itemSep : undefined}>
+                      <WeaponProfileRow weapon={w} unit={unit} onOpen={onOpenDetail} />
+                    </div>
+                  ))}
+                </div>
+              </SubSection>
+            </>
           )}
 
           {unit.abilities?.length > 0 && (
@@ -101,7 +111,7 @@ export function UnitPhaseSection({ unit, open, onToggle, onOpenDetail }: Props) 
               <SubSection label="Abilities" count={unit.abilities.length}>
                 <div className={styles.itemList}>
                   {unit.abilities.map((r, i) => (
-                    <div key={r.name} className={i > 0 ? styles.itemSep : undefined}>
+                    <div key={`${r.name}-${i}`} className={i > 0 ? styles.itemSep : undefined}>
                       <RuleItem rule={r} unit={unit} onOpen={onOpenDetail} />
                     </div>
                   ))}
@@ -116,7 +126,7 @@ export function UnitPhaseSection({ unit, open, onToggle, onOpenDetail }: Props) 
               <SubSection label="Stratagems" count={unit.stratagems.length}>
                 <div className={styles.itemList}>
                   {unit.stratagems.map((s, i) => (
-                    <div key={s.name} className={i > 0 ? styles.itemSep : undefined}>
+                    <div key={`${s.name}-${i}`} className={i > 0 ? styles.itemSep : undefined}>
                       <StratagemItem strat={s} unit={unit} onOpen={onOpenDetail} />
                     </div>
                   ))}

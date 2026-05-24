@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { PhaseId, DrawerPayload } from '@/lib/types'
+import { PhaseId, DrawerPayload, Roster } from '@/lib/types'
 import { PHASES, SAMPLE_ROSTER } from '@/lib/sampleData'
 import { TopBar } from './TopBar'
 import { PhaseNav } from './PhaseNav'
@@ -10,12 +10,32 @@ import { UnitPhaseSection } from '@/components/roster/UnitPhaseSection'
 import { DetailDrawer } from '@/components/roster/DetailDrawer'
 import styles from './PhaseReferenceScreen.module.css'
 
-export function PhaseReferenceScreen() {
+interface Props {
+  roster?: Roster
+  title?: string
+  meta?: string
+  version?: string
+  points?: number
+  cp?: number
+  cpMax?: number
+  onBack?: () => void
+}
+
+export function PhaseReferenceScreen({
+  roster = SAMPLE_ROSTER,
+  title = 'Strike Cadre',
+  meta,
+  version,
+  points = 1995,
+  cp = 6,
+  cpMax = 12,
+  onBack,
+}: Props) {
   const [phase, setPhase] = useState<PhaseId>('fight')
   const [openUnitIds, setOpenUnitIds] = useState<Set<string>>(new Set())
   const [drawer, setDrawer] = useState<DrawerPayload>(null)
 
-  const units = SAMPLE_ROSTER[phase] ?? []
+  const units = roster[phase] ?? []
 
   function handlePhaseChange(id: PhaseId) {
     setPhase(id)
@@ -37,7 +57,15 @@ export function PhaseReferenceScreen() {
 
   return (
     <div className="bf-app">
-      <TopBar rosterName="Strike Cadre" points={1995} cp={6} cpMax={12} />
+      <TopBar
+        rosterName={title}
+        meta={meta}
+        version={version}
+        points={meta ? undefined : points}
+        cp={meta ? undefined : cp}
+        cpMax={cpMax}
+        onBack={onBack}
+      />
       <PhaseNav phases={PHASES} activeId={phase} onChange={handlePhaseChange} />
 
       <div className={`bf-scroll ${styles.scroll}`}>
@@ -55,7 +83,7 @@ export function PhaseReferenceScreen() {
 
         {units.length === 0 && (
           <div className={styles.empty}>
-            No phase-specific rules surface this phase.
+            No units for this phase.
           </div>
         )}
       </div>

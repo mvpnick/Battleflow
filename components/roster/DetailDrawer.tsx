@@ -14,11 +14,10 @@ interface Props {
   onClose: () => void
 }
 
-function kindLabel(kind: string) {
+function kindLabel(kind: 'weapon' | 'ability' | 'stratagem') {
   if (kind === 'weapon') return 'Weapon'
   if (kind === 'ability') return 'Ability'
-  if (kind === 'stratagem') return 'Stratagem'
-  return 'Modifier'
+  return 'Stratagem'
 }
 
 function DrawerField({ label, children }: { label: string; children: React.ReactNode }) {

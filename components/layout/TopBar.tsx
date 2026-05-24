@@ -3,23 +3,34 @@ import styles from './TopBar.module.css'
 
 interface Props {
   rosterName: string
-  points: number
-  cp: number
-  cpMax: number
+  points?: number
+  cp?: number
+  cpMax?: number
+  meta?: string
+  version?: string
+  onBack?: () => void
 }
 
-export function TopBar({ rosterName, points, cp, cpMax }: Props) {
+export function TopBar({ rosterName, points, cp, cpMax, meta, version, onBack }: Props) {
+  const subtitle = meta ?? (points != null ? `${points} pts` : undefined)
   return (
     <div className={styles.bar}>
       <div className={styles.left}>
-        <Link href="/" className={styles.icon} aria-label="Home">◬</Link>
+        {onBack ? (
+          <button className={styles.icon} aria-label="Back to factions" onClick={onBack}>←</button>
+        ) : (
+          <Link href="/" className={styles.icon} aria-label="Home">◬</Link>
+        )}
         <div className={styles.meta}>
-          <span className={styles.rosterLabel}>Roster</span>
-          <span className={styles.rosterName}>{rosterName} · {points} pts</span>
+          <span className={styles.rosterLabel}>{meta ? 'Faction' : 'Roster'}</span>
+          <span className={styles.rosterName}>
+            {rosterName}{subtitle ? ` · ${subtitle}` : ''}
+          </span>
         </div>
       </div>
       <div className={styles.right}>
-        <CPMeter cp={cp} max={cpMax} />
+        {version && <span className={styles.version}>{version}</span>}
+        {cp != null && <CPMeter cp={cp} max={cpMax ?? cp} />}
         <button className={styles.settingsBtn} aria-label="Settings">
           <svg width="14" height="14" viewBox="0 0 14 14">
             <circle cx="7" cy="7" r="2" stroke="currentColor" strokeWidth="1.2" fill="none"/>

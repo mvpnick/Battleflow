@@ -62,6 +62,17 @@
   gap: 8px;
 }
 
+.version {
+  font-family: var(--f-mono);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  color: var(--fg-mute);
+  padding: 3px 7px;
+  background: var(--surface-1);
+  border: 1px solid var(--border-faint);
+  border-radius: var(--r-2);
+}
+
 .cpMeter {
   display: flex;
   align-items: center;

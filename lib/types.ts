@@ -40,6 +40,7 @@ export type Unit = {
   name: string
   role: string
   models: number
+  stats?: Stats
   tags: string[]
   hot: string[]
   weapons: Weapon[]
