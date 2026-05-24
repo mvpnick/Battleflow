@@ -131,6 +131,7 @@ export const FactionArtifactSchema = z.object({
   factionId: z.string(),
   factionName: z.string(),
   bsCatalogueId: z.string(),
+  factionKeywords: z.array(z.string()),
   detachments: z.array(
     z.object({
       id: z.string(),
@@ -147,6 +148,7 @@ export function toFactionArtifact(
   faction: Catalogue,
   resolved: ResolvedUnit[],
   factionId: string,
+  factionKeywords: string[],
 ): FactionArtifact {
   const factionName = faction.name
   const glossaryMap = new Map<string, GlossaryRule>()
@@ -192,6 +194,7 @@ export function toFactionArtifact(
     factionId,
     factionName,
     bsCatalogueId: faction.id,
+    factionKeywords,
     detachments: [],
     units,
     glossary: [...glossaryMap.values()],

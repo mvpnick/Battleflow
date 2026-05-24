@@ -139,7 +139,78 @@ async function main() {
     const index = buildIndex([gst, ...allCats])
     const enumerable = chain.filter((c) => c.enumerateRoots).map((c) => c.catalogue)
     const units = enumerateUnits(enumerable, index)
-    const artifact = toFactionArtifact(faction, units, slug)
+
+    // Derive factionKeywords in two steps:
+    //
+    // 1. NAME-MATCH: Find the enumerable catalogue (primary or imported) whose name best
+    //    matches the faction slug. This is the "native" catalogue — the one that defines
+    //    the faction's own units, as opposed to ally catalogues imported for roster-building.
+    //
+    //    Example: Chaos Daemons' chain includes "Chaos - Chaos Daemons" (primary, 31 units,
+    //    Heretic Astartes allies) and "Chaos - Daemons Library" (64 units, Legiones Daemonica).
+    //    Both score 2 matches against slug words ["chaos","daemons"]; the library wins the
+    //    tie-break by unit count. Similarly, Chaos Knights' own library (18 CK units, score 2)
+    //    beats the imported Daemons Library (score 1).
+    //
+    // 2. SUB-KEYWORD: Also include any "Faction: X" keyword that appears ONLY in units which
+    //    already carry a native keyword (i.e., it's a strict sub-set co-keyword). This captures
+    //    e.g. "Faction: Blood Angels" — every BA unit also carries "Faction: Adeptus Astartes",
+    //    so both should filter identically. Keywords from separate groups (Agents of the
+    //    Imperium, Imperial Knights, …) appear in units that do NOT share a native keyword, so
+    //    they are naturally excluded.
+    const slugWords = slug.split('-')
+    const nameScore = (catalogueName: string) =>
+      slugWords.filter((w) => catalogueName.toLowerCase().includes(w)).length
+
+    const enumerableEntries = chain.filter((c) => c.enumerateRoots)
+    const unitsByEntry = new Map(
+      enumerableEntries.map((e) => [e, enumerateUnits([e.catalogue], index)])
+    )
+
+    let bestScore = nameScore(chain[0].catalogue.name)
+    let bestCatUnits = unitsByEntry.get(enumerableEntries[0]) ?? []
+
+    for (const entry of enumerableEntries.slice(1)) {
+      const score = nameScore(entry.catalogue.name)
+      if (score < bestScore) continue
+      const catUnits = unitsByEntry.get(entry)!
+      if (score > bestScore || catUnits.length > bestCatUnits.length) {
+        bestScore = score
+        bestCatUnits = catUnits
+      }
+    }
+
+    const nativeIds = new Set(bestCatUnits.map((u) => u.bsId))
+    const nativeKeywords = new Set(
+      bestCatUnits.flatMap((u) => u.keywords.filter((k) => k.startsWith('Faction: ')))
+    )
+    const factionKeywords = [...nativeKeywords]
+
+    // Sub-keyword pass: include co-occurring faction keywords where all units carrying
+    // the keyword are native AND at least 2 native units share it (preventing lone-character
+    // sub-factions from inflating factionKeywords).
+    const isFactionKw = (k: string) => k.startsWith('Faction: ')
+    const allFactionKws = [...new Set(units.flatMap((u) => u.keywords.filter(isFactionKw)))]
+    for (const kw of allFactionKws) {
+      if (nativeKeywords.has(kw)) continue
+      const kwUnits = units.filter((u) => u.keywords.includes(kw))
+      if (kwUnits.length >= 2 && kwUnits.every((u) => nativeIds.has(u.bsId))) {
+        factionKeywords.push(kw)
+      }
+    }
+
+    // Keep units whose faction keywords are a subset of factionKeywords. Units with NO
+    // Faction: keywords (Drop Pod, Legends entries, cross-faction Epic Heroes like Fabius
+    // Bile) pass vacuously — this is intentional; BSData omits faction tags on genuinely
+    // faction-agnostic units. Units from unrelated ally catalogues (e.g. Dark Angels
+    // characters) carry tags like "Faction: Dark Angels" that are not in factionKeywords
+    // and are therefore excluded.
+    const factionKwSet = new Set(factionKeywords)
+    const filteredUnits = units.filter((u) => {
+      const unitFactionKws = u.keywords.filter((k) => k.startsWith('Faction: '))
+      return unitFactionKws.every((k) => factionKwSet.has(k))
+    })
+    const artifact = toFactionArtifact(faction, filteredUnits, slug, factionKeywords)
     const result = prepareArtifact(artifact)
     results.push(result)
     if (!args.dryRun) await writeArtifact(result)

@@ -37,6 +37,12 @@ export type FactionArtifact = {
   factionId: string
   factionName: string
   bsCatalogueId: string
+  /**
+   * The set of `"Faction: X"` keywords that belong to this faction.
+   * Derived at ingest to filter out units from ally catalogues imported only for
+   * roster-building (e.g. Chaos Daemons library inside a CSM chain).
+   */
+  factionKeywords: string[]
   detachments: Detachment[]
   units: PreparedUnit[]
   glossary: GlossaryRule[]
