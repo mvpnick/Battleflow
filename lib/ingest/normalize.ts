@@ -112,6 +112,7 @@ const PreparedUnitSchema = z.object({
 export const ManifestFactionSchema = z.object({
   factionId: z.string(),
   factionName: z.string(),
+  factionKeywords: z.array(z.string()),
   artifact: z.string(),
   bytes: z.number(),
   sha256: z.string(),

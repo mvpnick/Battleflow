@@ -1,0 +1,110 @@
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  max-width: 380px;
+}
+
+.label {
+  font-family: var(--f-mono);
+  font-size: var(--t-xs);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--fg-dim);
+}
+
+.textarea {
+  font-family: var(--f-mono);
+  font-size: var(--t-xs);
+  line-height: 1.6;
+  color: var(--fg-soft);
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: var(--r-2);
+  padding: 10px 12px;
+  resize: vertical;
+  width: 100%;
+  min-height: 120px;
+  outline: none;
+  transition: border-color 0.12s ease;
+}
+
+.textarea::placeholder {
+  color: var(--fg-dim);
+}
+
+.textarea:focus {
+  border-color: var(--signal-line);
+}
+
+.textarea:disabled {
+  opacity: 0.5;
+}
+
+.error {
+  font-family: var(--f-mono);
+  font-size: var(--t-xs);
+  color: var(--warn);
+  margin: 0;
+  line-height: 1.5;
+}
+
+.submit {
+  font-family: var(--f-mono);
+  font-size: var(--t-sm);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--signal);
+  background: var(--signal-dim);
+  border: 1px solid var(--signal-line);
+  border-radius: var(--r-2);
+  padding: 10px 20px;
+  cursor: pointer;
+  transition: opacity 0.12s ease, background-color 0.12s ease;
+  align-self: flex-start;
+}
+
+.submit:hover:not(:disabled) {
+  background: oklch(0.79 0.13 75 / 0.24);
+}
+
+.submit:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.select {
+  font-family: var(--f-mono);
+  font-size: var(--t-xs);
+  color: var(--fg-soft);
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: var(--r-2);
+  padding: 10px 12px;
+  width: 100%;
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.12s ease;
+}
+
+.select:focus {
+  border-color: var(--signal-line);
+}
+
+.back {
+  font-family: var(--f-mono);
+  font-size: var(--t-xs);
+  letter-spacing: 0.06em;
+  color: var(--fg-dim);
+  background: transparent;
+  border: none;
+  padding: 4px 0;
+  cursor: pointer;
+  align-self: flex-start;
+  transition: color 0.12s ease;
+}
+
+.back:hover {
+  color: var(--fg-soft);
+}

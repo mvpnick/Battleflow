@@ -88,9 +88,11 @@ export function DetailDrawer({ open, payload, onClose }: Props) {
       <DrawerField label="Affected">
         <span className={styles.affected}>{unit.name}</span>
       </DrawerField>
-      <DrawerField label="Source">
-        <span className={styles.source}>{r.source}</span>
-      </DrawerField>
+      {r.source && (
+        <DrawerField label="Source">
+          <span className={styles.source}>{r.source}</span>
+        </DrawerField>
+      )}
     </>
   ) : null
 

@@ -22,20 +22,27 @@ interface Props {
 }
 
 export function PhaseReferenceScreen({
-  roster = SAMPLE_ROSTER,
-  title = 'Strike Cadre',
+  roster,
+  title,
   meta,
   version,
-  points = 1995,
-  cp = 6,
-  cpMax = 12,
+  points,
+  cp,
+  cpMax,
   onBack,
 }: Props) {
+  const isDemo = !roster
+  const effectiveRoster = roster ?? SAMPLE_ROSTER
+  const effectiveTitle = title ?? 'Strike Cadre'
+  const effectivePoints = points ?? (isDemo ? 1995 : undefined)
+  const effectiveCp = cp ?? (isDemo ? 6 : undefined)
+  const effectiveCpMax = cpMax ?? (isDemo ? 12 : undefined)
+
   const [phase, setPhase] = useState<PhaseId>('fight')
   const [openUnitIds, setOpenUnitIds] = useState<Set<string>>(new Set())
   const [drawer, setDrawer] = useState<DrawerPayload>(null)
 
-  const units = roster[phase] ?? []
+  const units = effectiveRoster[phase] ?? []
 
   function handlePhaseChange(id: PhaseId) {
     setPhase(id)
@@ -58,12 +65,12 @@ export function PhaseReferenceScreen({
   return (
     <div className="bf-app">
       <TopBar
-        rosterName={title}
+        rosterName={effectiveTitle}
         meta={meta}
         version={version}
-        points={meta ? undefined : points}
-        cp={meta ? undefined : cp}
-        cpMax={cpMax}
+        points={effectivePoints}
+        cp={effectiveCp}
+        cpMax={effectiveCpMax}
         onBack={onBack}
       />
       <PhaseNav phases={PHASES} activeId={phase} onChange={handlePhaseChange} />

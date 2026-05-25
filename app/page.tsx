@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { RosterImport } from '@/components/landing/RosterImport'
 
 export default function Home() {
   return (
@@ -7,8 +8,9 @@ export default function Home() {
       flexDirection: 'column',
       alignItems: 'center',
       justifyContent: 'center',
-      height: '100vh',
-      gap: 24,
+      minHeight: '100vh',
+      gap: 32,
+      padding: '40px 20px',
       fontFamily: 'var(--f-ui)',
     }}>
       <div style={{ textAlign: 'center' }}>
@@ -25,6 +27,9 @@ export default function Home() {
           Phase-filtered wargame reference
         </p>
       </div>
+
+      <RosterImport />
+
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10, alignItems: 'center' }}>
         <Link
           href="/factions"

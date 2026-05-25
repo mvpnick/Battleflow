@@ -1,5 +1,5 @@
-import { PhaseReferenceScreen } from '@/components/layout/PhaseReferenceScreen'
+import { RosterScreen } from '@/components/roster/RosterScreen'
 
 export default function RosterPage() {
-  return <PhaseReferenceScreen />
+  return <RosterScreen />
 }

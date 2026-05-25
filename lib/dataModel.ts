@@ -51,6 +51,8 @@ export type FactionArtifact = {
 export type ManifestFaction = {
   factionId: string
   factionName: string
+  /** Faction keyword strings with the "Faction: " prefix stripped, e.g. ["Death Guard"]. */
+  factionKeywords: string[]
   artifact: string
   bytes: number
   sha256: string

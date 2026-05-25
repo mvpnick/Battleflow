@@ -16,6 +16,7 @@ export function prepareArtifact(artifact: FactionArtifact): EmitResult {
   return {
     factionId: artifact.factionId,
     factionName: artifact.factionName,
+    factionKeywords: artifact.factionKeywords.map(kw => kw.replace(/^Faction:\s*/i, '')),
     artifact: `/data/factions/${artifact.factionId}.json`,
     bytes,
     sha256,

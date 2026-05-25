@@ -12,7 +12,7 @@ interface Props {
 }
 
 export function TopBar({ rosterName, points, cp, cpMax, meta, version, onBack }: Props) {
-  const subtitle = meta ?? (points != null ? `${points} pts` : undefined)
+  const subtitle = [meta, points != null ? `${points} pts` : undefined].filter(Boolean).join(' · ') || undefined
   return (
     <div className={styles.bar}>
       <div className={styles.left}>

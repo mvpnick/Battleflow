@@ -226,6 +226,7 @@ async function main() {
       .map((r) => ({
         factionId: r.factionId,
         factionName: r.factionName,
+        factionKeywords: r.factionKeywords,
         artifact: r.artifact,
         bytes: r.bytes,
         sha256: r.sha256,
