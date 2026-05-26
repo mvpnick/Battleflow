@@ -8,6 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "ingest": "tsx lib/ingest/cli.ts",
+    "ingest:wahapedia": "tsx lib/ingest/wahapediaCli.ts",
+    "ingest:dedup": "tsx lib/ingest/dedupCli.ts",
     "test": "vitest run"
   },
   "dependencies": {
@@ -22,6 +24,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.2.6",
     "fast-xml-parser": "^5.8.0",
+    "node-html-parser": "^7.1.0",
     "tsx": "^4.22.3",
     "typescript": "^5",
     "vitest": "^4.1.7",

@@ -35,7 +35,7 @@ export function RosterImport() {
 
     setState({ kind: 'loading', step: `Loading ${match.factionName}…` })
     try {
-      const artifact = await loadFaction(match)
+      const artifact = await loadFaction(match, manifest)
       const { roster, meta } = buildRoster(parsed, artifact)
       const isEmpty = Object.values(roster).every(units => !units?.length)
       if (isEmpty) {
@@ -79,11 +79,14 @@ export function RosterImport() {
       //   equals the parsed keyword (e.g. ASURYANI → craftworlds, not ynnari).
       // Tier 2: single-keyword faction — the "generic" base catalogue
       //   (e.g. space-marines for ADEPTUS ASTARTES).
+      // Tier 3: factionName match — New Recruit often exports the display name rather than
+      //   a BSData keyword (e.g. "CHAOS DAEMONS" matches factionName "Chaos Daemons").
       // Fallback: show the picker rather than silently picking the wrong faction.
       const match = matches.length === 1
         ? matches[0]
         : (matches.find(f => norm(f.factionKeywords[0] ?? '') === kwNorm)
           ?? matches.find(f => f.factionKeywords.length === 1)
+          ?? manifest.factions.find(f => norm(f.factionName) === kwNorm)
           ?? null)
 
       if (!match) {
@@ -96,7 +99,7 @@ export function RosterImport() {
       }
 
       setState({ kind: 'loading', step: `Loading ${match.factionName}…` })
-      const artifact = await loadFaction(match)
+      const artifact = await loadFaction(match, manifest)
 
       const { roster, meta } = buildRoster(parsed, artifact)
 

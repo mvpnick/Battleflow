@@ -44,8 +44,25 @@ export type FactionArtifact = {
    */
   factionKeywords: string[]
   detachments: Detachment[]
+  /**
+   * Ids of {@link SharedDetachmentSet}s whose detachments belong to this faction but are stored
+   * once and shared (the generic "Codex: Space Marines" detachments carried identically by all 12
+   * chapters). The runtime loader merges them into `detachments`. Absent when nothing is shared.
+   */
+  sharedDetachments?: string[]
   units: PreparedUnit[]
   glossary: GlossaryRule[]
+}
+
+/**
+ * A set of detachments factored out of multiple faction artifacts because they are byte-identical
+ * across them (e.g. the generic Codex detachments shared by every Space Marine chapter). Stored
+ * once and referenced by `FactionArtifact.sharedDetachments`.
+ */
+export type SharedDetachmentSet = {
+  schemaVersion: typeof DATA_SCHEMA_VERSION
+  id: string
+  detachments: Detachment[]
 }
 
 export type ManifestFaction = {
@@ -59,10 +76,20 @@ export type ManifestFaction = {
   unitCount: number
 }
 
+/** A shared detachment set's manifest entry — its URL + content hash for immutable caching. */
+export type ManifestSharedDetachments = {
+  id: string
+  artifact: string
+  bytes: number
+  sha256: string
+}
+
 export type DataManifest = {
   schemaVersion: typeof DATA_SCHEMA_VERSION
   bsDataTag: string
   bsDataCommit: string
   buildTime: string
   factions: ManifestFaction[]
+  /** Shared detachment sets referenced by `FactionArtifact.sharedDetachments`. */
+  sharedDetachments?: ManifestSharedDetachments[]
 }

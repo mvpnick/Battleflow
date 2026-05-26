@@ -6,6 +6,7 @@ import {
 } from './fetch'
 import { parseCatalogue, parseGameSystem, type Catalogue } from '../parsers/bsdata'
 import { buildIndex, enumerateUnits } from './resolve'
+import { extractDetachments, selectOwnedCatalogues } from './detachments'
 import { toFactionArtifact } from './normalize'
 import { prepareArtifact, writeArtifact, writeManifest, type EmitResult } from './emit'
 import { DATA_SCHEMA_VERSION, type DataManifest } from '../dataModel'
@@ -128,6 +129,7 @@ async function main() {
   }
 
   const findFileById = await makeFileFinder(sha, catalogues)
+
   const results: EmitResult[] = []
 
   for (const file of factionFiles) {
@@ -210,11 +212,16 @@ async function main() {
       const unitFactionKws = u.keywords.filter((k) => k.startsWith('Faction: '))
       return unitFactionKws.every((k) => factionKwSet.has(k))
     })
-    const artifact = toFactionArtifact(faction, filteredUnits, slug, factionKeywords)
+    // Scope detachments to the faction's own catalogue(s), dropping the ally catalogues its
+    // chain imports for roster-building, then gate-filter chapter/sub-faction detachments.
+    const ownedCats = selectOwnedCatalogues(allCats, faction, index)
+    const detachments = extractDetachments(ownedCats, index, faction.id)
+    const artifact = toFactionArtifact(faction, filteredUnits, slug, factionKeywords, detachments)
     const result = prepareArtifact(artifact)
     results.push(result)
     if (!args.dryRun) await writeArtifact(result)
-    console.log(`${result.unitCount} units, ${(result.bytes / 1024).toFixed(1)} KB`)
+    const detStr = detachments.length > 0 ? `, ${detachments.length} detachment(s)` : ''
+    console.log(`${result.unitCount} units${detStr}, ${(result.bytes / 1024).toFixed(1)} KB`)
   }
 
   const manifest: DataManifest = {

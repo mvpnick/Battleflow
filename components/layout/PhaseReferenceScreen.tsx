@@ -1,17 +1,35 @@
 'use client'
 
 import { useState } from 'react'
-import { PhaseId, DrawerPayload, Roster } from '@/lib/types'
-import { PHASES, SAMPLE_ROSTER } from '@/lib/sampleData'
+import { PhaseId, DrawerPayload, Roster, Strat } from '@/lib/types'
+import { PHASES, SAMPLE_ROSTER, SAMPLE_STRATAGEMS } from '@/lib/sampleData'
 import { TopBar } from './TopBar'
 import { PhaseNav } from './PhaseNav'
 import { PhaseSummary } from './PhaseSummary'
+import { PhaseStratagemSection } from './PhaseStratagemSection'
 import { UnitPhaseSection } from '@/components/roster/UnitPhaseSection'
 import { DetailDrawer } from '@/components/roster/DetailDrawer'
 import styles from './PhaseReferenceScreen.module.css'
 
+const PHASE_WORDS: Record<PhaseId, string> = {
+  command: 'command',
+  movement: 'movement',
+  shooting: 'shooting',
+  charge: 'charge',
+  fight: 'fight',
+  battleshock: 'battleshock',
+}
+
+function stratagemMatchesPhase(timing: string, phase: PhaseId): boolean {
+  const t = timing.toLowerCase()
+  const hasAnyPhaseWord = Object.values(PHASE_WORDS).some(w => t.includes(w))
+  if (!hasAnyPhaseWord) return true
+  return t.includes(PHASE_WORDS[phase])
+}
+
 interface Props {
   roster?: Roster
+  stratagems?: Strat[]
   title?: string
   meta?: string
   version?: string
@@ -23,6 +41,7 @@ interface Props {
 
 export function PhaseReferenceScreen({
   roster,
+  stratagems,
   title,
   meta,
   version,
@@ -33,6 +52,7 @@ export function PhaseReferenceScreen({
 }: Props) {
   const isDemo = !roster
   const effectiveRoster = roster ?? SAMPLE_ROSTER
+  const effectiveStratagems = stratagems ?? (isDemo ? SAMPLE_STRATAGEMS : [])
   const effectiveTitle = title ?? 'Strike Cadre'
   const effectivePoints = points ?? (isDemo ? 1995 : undefined)
   const effectiveCp = cp ?? (isDemo ? 6 : undefined)
@@ -43,6 +63,7 @@ export function PhaseReferenceScreen({
   const [drawer, setDrawer] = useState<DrawerPayload>(null)
 
   const units = effectiveRoster[phase] ?? []
+  const phaseStratagems = effectiveStratagems.filter(s => stratagemMatchesPhase(s.timing, phase))
 
   function handlePhaseChange(id: PhaseId) {
     setPhase(id)
@@ -76,7 +97,9 @@ export function PhaseReferenceScreen({
       <PhaseNav phases={PHASES} activeId={phase} onChange={handlePhaseChange} />
 
       <div className={`bf-scroll ${styles.scroll}`}>
-        <PhaseSummary units={units} onExpandAll={handleExpandAll} />
+        <PhaseSummary units={units} stratagemCount={phaseStratagems.length} onExpandAll={handleExpandAll} />
+
+        <PhaseStratagemSection stratagems={phaseStratagems} />
 
         {units.map(u => (
           <UnitPhaseSection

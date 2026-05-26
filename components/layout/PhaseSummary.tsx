@@ -3,13 +3,14 @@ import styles from './PhaseSummary.module.css'
 
 interface Props {
   units: Unit[]
+  stratagemCount?: number
   onExpandAll: () => void
 }
 
-export function PhaseSummary({ units, onExpandAll }: Props) {
+export function PhaseSummary({ units, stratagemCount, onExpandAll }: Props) {
   const totalWeapons = units.reduce((n, u) => n + (u.weapons?.length ?? 0), 0)
   const totalRules = units.reduce((n, u) => n + (u.abilities?.length ?? 0), 0)
-  const totalStrats = units.reduce((n, u) => n + (u.stratagems?.length ?? 0), 0)
+  const totalStrats = stratagemCount ?? units.reduce((n, u) => n + (u.stratagems?.length ?? 0), 0)
 
   return (
     <div className={styles.strip}>

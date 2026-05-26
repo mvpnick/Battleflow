@@ -106,6 +106,28 @@ export interface SelectionEntryGroup {
   entryLinks?: { entryLink?: EntryLink[] }
 }
 
+/**
+ * A BattleScribe modifier condition. The detachment-scoping logic cares about
+ * `type="notInstanceOf"` with `scope="primary-catalogue"`, whose `childId` is the
+ * catalogue id a (chapter-)specific detachment is restricted to.
+ */
+export interface Condition {
+  type: string
+  scope?: string
+  field?: string
+  childId?: string
+  value?: string
+}
+
+/** A BattleScribe modifier. Detachments use `field="hidden"` to gate visibility per catalogue. */
+export interface Modifier {
+  type: string
+  field: string
+  value: string
+  conditions?: { condition?: Condition[] }
+  conditionGroups?: { conditionGroup?: { conditions?: { condition?: Condition[] } }[] }
+}
+
 export interface SelectionEntry {
   id: string
   name: string
@@ -113,12 +135,14 @@ export interface SelectionEntry {
   hidden?: string
   import?: string
   profiles?: { profile?: Profile[] }
+  rules?: { rule?: RuleNode[] }
   infoLinks?: { infoLink?: InfoLink[] }
   entryLinks?: { entryLink?: EntryLink[] }
   selectionEntries?: { selectionEntry?: SelectionEntry[] }
   selectionEntryGroups?: { selectionEntryGroup?: SelectionEntryGroup[] }
   categoryLinks?: { categoryLink?: CategoryLink[] }
   costs?: { cost?: Cost[] }
+  modifiers?: { modifier?: Modifier[] }
 }
 
 export interface CatalogueLink {

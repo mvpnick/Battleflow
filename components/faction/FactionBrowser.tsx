@@ -45,7 +45,7 @@ export function FactionBrowser() {
   async function pick(manifest: DataManifest, faction: ManifestFaction) {
     setView({ kind: 'loadingFaction', manifest, name: faction.factionName })
     try {
-      const artifact = await loadFaction(faction)
+      const artifact = await loadFaction(faction, manifest)
       if (mounted.current) {
         setView({ kind: 'viewing', manifest, faction: artifact, roster: toRoster(artifact) })
       }

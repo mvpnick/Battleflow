@@ -1,5 +1,5 @@
 import type { FactionArtifact, PreparedUnit } from '../dataModel'
-import type { PhaseId, Roster, Unit, Weapon } from '../types'
+import type { PhaseId, Roster, Strat, Unit, Weapon } from '../types'
 import type { ParsedArmy } from './parseGwText'
 import { norm } from './normalize'
 
@@ -35,6 +35,7 @@ export type RosterMeta = {
   factionName: string
   detachment?: string
   points?: number
+  stratagems?: Strat[]
 }
 
 /**
@@ -59,6 +60,17 @@ export function buildRoster(
     detachment: parsed.detachment,
     points: parsed.totalPoints,
   }
+
+  // Strip parenthetical suffixes (e.g. "Daemonic Incursion (Warp Rifts)" → "Daemonic Incursion")
+  // during comparison only; the raw parsed.detachment is preserved for display.
+  const stripParen = (s: string) => s.replace(/\s*\([^)]*\)\s*$/, '').trim()
+  const detNorm = norm(parsed.detachment ?? '')
+  const detNormStripped = norm(stripParen(parsed.detachment ?? ''))
+  const matchedDetachment = artifact.detachments.find(d => {
+    const dn = norm(d.name)
+    return dn === detNorm || dn === detNormStripped
+  })
+  if (matchedDetachment) meta.stratagems = matchedDetachment.stratagems
 
   for (const parsedUnit of parsed.units) {
     const matched = matchUnit(parsedUnit.name, artifact.units)

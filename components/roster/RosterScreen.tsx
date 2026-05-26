@@ -1,34 +1,28 @@
 'use client'
 
-import { useState } from 'react'
+import { useSyncExternalStore } from 'react'
 import { PhaseReferenceScreen } from '@/components/layout/PhaseReferenceScreen'
-import { loadRoster } from '@/lib/roster/storage'
-import type { StoredRoster } from '@/lib/roster/storage'
+import { CORE_STRATAGEMS } from '@/lib/data/coreStratagems'
+import { getRosterSnapshot, subscribeRoster } from '@/lib/roster/storage'
 
-/**
- * Reads a persisted roster from localStorage on mount and passes it to
- * PhaseReferenceScreen. Falls back to the built-in sample data when no
- * stored roster is present (e.g. direct URL access, first visit).
- *
- * Lazy initializer runs once on the client only — SSR returns undefined
- * (window absent), client returns the stored value without an extra render.
- */
 export function RosterScreen() {
-  const [stored] = useState<StoredRoster | null | undefined>(() =>
-    typeof window !== 'undefined' ? loadRoster() : undefined
-  )
+  // localStorage is an external store, so read it via useSyncExternalStore. The
+  // server snapshot is undefined; during hydration the client uses it too, so the
+  // first client render matches the server (null) before the real roster resolves.
+  const stored = useSyncExternalStore(subscribeRoster, getRosterSnapshot, () => undefined)
 
-  // undefined = SSR pass; render nothing so we don't flash sample data before
-  // the client hydration resolves the real roster.
+  // undefined = SSR/hydration pass; render null so server and client agree.
   if (stored === undefined) return null
 
   if (stored) {
+    const stratagems = [...(stored.meta.stratagems ?? []), ...CORE_STRATAGEMS]
     return (
       <PhaseReferenceScreen
         roster={stored.roster}
         title={stored.meta.factionName}
         meta={stored.meta.detachment}
         points={stored.meta.points}
+        stratagems={stratagems}
       />
     )
   }

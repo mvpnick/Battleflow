@@ -1,4 +1,4 @@
-import { Phase, Roster } from './types'
+import { Phase, Roster, Strat } from './types'
 
 export const PHASES: Phase[] = [
   { id: 'command',     n: 1, abbr: 'CMD', name: 'Command' },
@@ -240,3 +240,51 @@ export const SAMPLE_ROSTER: Roster = {
     },
   ],
 }
+
+export const SAMPLE_STRATAGEMS: Strat[] = [
+  {
+    name: 'Counter-Offensive',
+    cp: 2,
+    timing: 'Fight phase',
+    effect: 'WHEN: In the Fight phase, after an enemy unit has fought.\nEFFECT: Select one unit from your army that is within Engagement Range of one or more enemy units and that has not already been selected to fight this phase. That unit fights next.',
+    summary: 'Your unit fights immediately after an enemy unit, jumping the queue.',
+    source: 'Core',
+    once: false,
+  },
+  {
+    name: 'Rapid Ingress',
+    cp: 1,
+    timing: 'Movement phase',
+    effect: 'WHEN: In your opponent\'s Movement phase, after your opponent has finished all moves.\nEFFECT: Select one unit from your army that is in Reserves. That unit can arrive on the battlefield as if it were the Reinforcements step of your Movement phase.',
+    summary: 'Deploy a Reserves unit at the end of your opponent\'s Movement phase.',
+    source: 'Core',
+    once: false,
+  },
+  {
+    name: 'Smokescreen',
+    cp: 1,
+    timing: 'Movement phase',
+    effect: 'WHEN: In any phase, just after an enemy unit has selected its targets.\nEFFECT: Select one SMOKE unit from your army that was selected as a target. Until the end of the phase, all models in that unit have the Benefit of Cover, and the Stealth ability.',
+    summary: 'Give a Smoke unit cover saves and Stealth against the current attacker.',
+    source: 'Core',
+    once: false,
+  },
+  {
+    name: 'Command Re-roll',
+    cp: 1,
+    timing: 'Command phase',
+    effect: 'WHEN: In any phase, just after you have made a Hit roll, a Wound roll, a Damage roll, a saving throw, or an Advance roll for a model in your army.\nEFFECT: Re-roll that roll.',
+    summary: 'Re-roll any single dice result immediately after rolling it.',
+    source: 'Core',
+    once: false,
+  },
+  {
+    name: 'Insane Bravery',
+    cp: 1,
+    timing: 'Battleshock phase',
+    effect: 'WHEN: In the Battleshock phase, just after a Battle-shock test has been failed for a unit from your army.\nEFFECT: That unit is no longer Battle-shocked.',
+    summary: 'Instantly remove Battle-shocked status from a friendly unit.',
+    source: 'Core',
+    once: 'battle',
+  },
+]

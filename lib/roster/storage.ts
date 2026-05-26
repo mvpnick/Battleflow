@@ -33,3 +33,24 @@ export function loadRoster(): StoredRoster | null {
     return null
   }
 }
+
+// useSyncExternalStore plumbing. getSnapshot must return a stable reference while
+// the stored value is unchanged, so we cache the parsed object keyed by the raw
+// localStorage string and only re-parse when it actually changes.
+let snapshotRaw: string | null = null
+let snapshotValue: StoredRoster | null = null
+
+export function getRosterSnapshot(): StoredRoster | null {
+  const raw = localStorage.getItem(KEY)
+  if (raw !== snapshotRaw) {
+    snapshotRaw = raw
+    snapshotValue = loadRoster()
+  }
+  return snapshotValue
+}
+
+export function subscribeRoster(onChange: () => void): () => void {
+  if (typeof window === 'undefined') return () => {}
+  window.addEventListener('storage', onChange)
+  return () => window.removeEventListener('storage', onChange)
+}

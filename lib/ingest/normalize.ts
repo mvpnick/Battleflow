@@ -3,6 +3,7 @@ import { textOf, type Catalogue, type Profile } from '../parsers/bsdata'
 import type { ResolvedUnit } from './resolve'
 import {
   DATA_SCHEMA_VERSION,
+  type Detachment,
   type FactionArtifact,
   type GlossaryRule,
   type PreparedUnit,
@@ -89,6 +90,7 @@ const RuleSchema = z.object({
 const StratSchema = RuleSchema.extend({
   cp: z.number(),
   once: z.union([z.enum(['battle', 'phase']), z.literal(false)]).optional(),
+  summary: z.string().optional(),
 })
 const GlossaryRuleSchema = RuleSchema.extend({ id: z.string() })
 const PreparedUnitSchema = z.object({
@@ -109,6 +111,13 @@ const PreparedUnitSchema = z.object({
   ruleRefs: z.array(z.string()),
   phases: z.array(z.enum(PHASE_IDS)).optional(),
 })
+const DetachmentSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  rules: z.array(GlossaryRuleSchema),
+  stratagems: z.array(StratSchema),
+})
+
 export const ManifestFactionSchema = z.object({
   factionId: z.string(),
   factionName: z.string(),
@@ -119,12 +128,26 @@ export const ManifestFactionSchema = z.object({
   unitCount: z.number(),
 })
 
+const ManifestSharedDetachmentsSchema = z.object({
+  id: z.string(),
+  artifact: z.string(),
+  bytes: z.number(),
+  sha256: z.string(),
+})
+
 export const DataManifestSchema = z.object({
   schemaVersion: z.literal(DATA_SCHEMA_VERSION),
   bsDataTag: z.string(),
   bsDataCommit: z.string(),
   buildTime: z.string(),
   factions: z.array(ManifestFactionSchema),
+  sharedDetachments: z.array(ManifestSharedDetachmentsSchema).optional(),
+})
+
+export const SharedDetachmentSetSchema = z.object({
+  schemaVersion: z.literal(DATA_SCHEMA_VERSION),
+  id: z.string(),
+  detachments: z.array(DetachmentSchema),
 })
 
 export const FactionArtifactSchema = z.object({
@@ -133,14 +156,8 @@ export const FactionArtifactSchema = z.object({
   factionName: z.string(),
   bsCatalogueId: z.string(),
   factionKeywords: z.array(z.string()),
-  detachments: z.array(
-    z.object({
-      id: z.string(),
-      name: z.string(),
-      rules: z.array(GlossaryRuleSchema),
-      stratagems: z.array(StratSchema),
-    }),
-  ),
+  detachments: z.array(DetachmentSchema),
+  sharedDetachments: z.array(z.string()).optional(),
   units: z.array(PreparedUnitSchema),
   glossary: z.array(GlossaryRuleSchema),
 })
@@ -150,6 +167,7 @@ export function toFactionArtifact(
   resolved: ResolvedUnit[],
   factionId: string,
   factionKeywords: string[],
+  detachments: Detachment[] = [],
 ): FactionArtifact {
   const factionName = faction.name
   const glossaryMap = new Map<string, GlossaryRule>()
@@ -196,7 +214,7 @@ export function toFactionArtifact(
     factionName,
     bsCatalogueId: faction.id,
     factionKeywords,
-    detachments: [],
+    detachments,
     units,
     glossary: [...glossaryMap.values()],
   }

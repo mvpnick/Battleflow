@@ -33,6 +33,7 @@ export type Rule = {
 export type Strat = Rule & {
   cp: number
   once?: 'battle' | 'phase' | false
+  summary?: string
 }
 
 export type Unit = {
