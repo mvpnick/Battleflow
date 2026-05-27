@@ -16,10 +16,18 @@ export function PhaseStratagemSection({ stratagems }: Props) {
 
   if (stratagems.length === 0) return null
 
-  function toggleOpen(name: string) {
+  // Composite key for expand/collapse state. Using only `strat.name` caused
+  // collisions when different detachments share a stratagem name (e.g. both have a
+  // "Rapid Deployment" variant). The `::` separator is safely absent from faction
+  // and stratagem names; the React card `key` below uses `-` for the same reason.
+  function openKey(strat: (typeof stratagems)[number]): string {
+    return `${strat.source}::${strat.name}`
+  }
+
+  function toggleOpen(key: string) {
     setOpenIds(prev => {
       const next = new Set(prev)
-      if (next.has(name)) next.delete(name); else next.add(name)
+      if (next.has(key)) next.delete(key); else next.add(key)
       return next
     })
   }
@@ -43,13 +51,14 @@ export function PhaseStratagemSection({ stratagems }: Props) {
       {!collapsed && (
         <div className={styles.list}>
           {stratagems.map((strat) => {
-            const isOpen = openIds.has(strat.name)
+            const key = openKey(strat)
+            const isOpen = openIds.has(key)
             return (
               <div key={`${strat.source}-${strat.name}`} className={styles.itemWrap}>
                 <button
                   type="button"
                   className={`bf-press ${styles.card}`}
-                  onClick={() => toggleOpen(strat.name)}
+                  onClick={() => toggleOpen(key)}
                 >
                   <div className={styles.cardTop}>
                     <CPCost n={strat.cp} />

@@ -1,16 +1,35 @@
-import { z } from 'zod'
+/**
+ * Ingest normalization: converts BSData resolved units into `FactionArtifact` shape.
+ *
+ * Schemas are defined in `lib/schemas.ts` (the single source of truth); this module
+ * re-exports the ones that the rest of the ingest pipeline (`emit.ts`, tests) import,
+ * so those callers need no path changes. Only `toFactionArtifact()` and its
+ * BSData-specific helpers live here.
+ */
+
+// Re-export schemas so ingest consumers keep `import ... from './normalize'` unchanged.
+export {
+  FactionArtifactSchema,
+  DataManifestSchema,
+  SharedDetachmentSetSchema,
+  ManifestFactionSchema,
+} from '../schemas'
+
 import { textOf, type Catalogue, type Profile } from '../parsers/bsdata'
 import type { ResolvedUnit } from './resolve'
 import {
   DATA_SCHEMA_VERSION,
+  FactionArtifactSchema,
   type Detachment,
   type FactionArtifact,
   type GlossaryRule,
   type PreparedUnit,
-} from '../dataModel'
+} from '../schemas'
 import type { Stats, Weapon, Rule } from '../types'
 
-const PHASE_IDS = ['command', 'movement', 'shooting', 'charge', 'fight', 'battleshock'] as const
+// ---------------------------------------------------------------------------
+// BSData-specific helpers (ingest-only, not exported)
+// ---------------------------------------------------------------------------
 
 /** Priority order for picking a single display "role" from a unit's keywords. */
 const ROLE_KEYWORDS = [
@@ -71,97 +90,15 @@ function dedupeBy<T>(items: T[], key: (item: T) => string): T[] {
   return out
 }
 
-const StatsSchema = z.record(z.string(), z.string())
-const ModifierSchema = z.object({ label: z.string(), cond: z.string().optional() })
-const WeaponSchema = z.object({
-  name: z.string(),
-  kind: z.enum(['melee', 'ranged']),
-  stats: StatsSchema,
-  tags: z.array(z.string()),
-  mods: z.array(ModifierSchema),
-})
-const RuleSchema = z.object({
-  name: z.string(),
-  timing: z.string(),
-  cond: z.string().optional(),
-  effect: z.string(),
-  source: z.string(),
-})
-const StratSchema = RuleSchema.extend({
-  cp: z.number(),
-  once: z.union([z.enum(['battle', 'phase']), z.literal(false)]).optional(),
-  summary: z.string().optional(),
-})
-const GlossaryRuleSchema = RuleSchema.extend({ id: z.string() })
-const PreparedUnitSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  role: z.string(),
-  models: z.number(),
-  tags: z.array(z.string()),
-  hot: z.array(z.string()),
-  weapons: z.array(WeaponSchema),
-  abilities: z.array(RuleSchema),
-  stratagems: z.array(StratSchema),
-  reminders: z.array(z.object({ text: z.string() })),
-  bsId: z.string(),
-  stats: StatsSchema.optional(),
-  points: z.number().optional(),
-  keywords: z.array(z.string()),
-  ruleRefs: z.array(z.string()),
-  phases: z.array(z.enum(PHASE_IDS)).optional(),
-})
-const DetachmentSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  rules: z.array(GlossaryRuleSchema),
-  stratagems: z.array(StratSchema),
-})
+// ---------------------------------------------------------------------------
+// Public API
+// ---------------------------------------------------------------------------
 
-export const ManifestFactionSchema = z.object({
-  factionId: z.string(),
-  factionName: z.string(),
-  factionKeywords: z.array(z.string()),
-  artifact: z.string(),
-  bytes: z.number(),
-  sha256: z.string(),
-  unitCount: z.number(),
-})
-
-const ManifestSharedDetachmentsSchema = z.object({
-  id: z.string(),
-  artifact: z.string(),
-  bytes: z.number(),
-  sha256: z.string(),
-})
-
-export const DataManifestSchema = z.object({
-  schemaVersion: z.literal(DATA_SCHEMA_VERSION),
-  bsDataTag: z.string(),
-  bsDataCommit: z.string(),
-  buildTime: z.string(),
-  factions: z.array(ManifestFactionSchema),
-  sharedDetachments: z.array(ManifestSharedDetachmentsSchema).optional(),
-})
-
-export const SharedDetachmentSetSchema = z.object({
-  schemaVersion: z.literal(DATA_SCHEMA_VERSION),
-  id: z.string(),
-  detachments: z.array(DetachmentSchema),
-})
-
-export const FactionArtifactSchema = z.object({
-  schemaVersion: z.literal(DATA_SCHEMA_VERSION),
-  factionId: z.string(),
-  factionName: z.string(),
-  bsCatalogueId: z.string(),
-  factionKeywords: z.array(z.string()),
-  detachments: z.array(DetachmentSchema),
-  sharedDetachments: z.array(z.string()).optional(),
-  units: z.array(PreparedUnitSchema),
-  glossary: z.array(GlossaryRuleSchema),
-})
-
+/**
+ * Convert a resolved BSData catalogue + units into a validated `FactionArtifact`.
+ * This is the final step of the BSData ingest pipeline; the artifact is then
+ * serialized and written to `public/data/factions/<id>.json` by `emit.ts`.
+ */
 export function toFactionArtifact(
   faction: Catalogue,
   resolved: ResolvedUnit[],
@@ -173,6 +110,7 @@ export function toFactionArtifact(
   const glossaryMap = new Map<string, GlossaryRule>()
 
   const units: PreparedUnit[] = resolved.map((u) => {
+    // Collect rules from each unit into the faction-level glossary (deduped by id).
     for (const rule of u.rules) {
       if (!glossaryMap.has(rule.id)) {
         glossaryMap.set(rule.id, {
@@ -219,5 +157,6 @@ export function toFactionArtifact(
     glossary: [...glossaryMap.values()],
   }
 
+  // Parse validates the artifact shape and strips any unknown fields.
   return FactionArtifactSchema.parse(artifact) as FactionArtifact
 }

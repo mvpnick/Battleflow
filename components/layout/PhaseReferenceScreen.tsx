@@ -35,19 +35,27 @@ export function PhaseReferenceScreen({
   cpMax,
   onBack,
 }: Props) {
-  const isDemo = !roster
-  const effectiveRoster = roster ?? SAMPLE_ROSTER
-  const effectiveStratagems = stratagems ?? (isDemo ? SAMPLE_STRATAGEMS : [])
-  const effectiveTitle = title ?? 'Strike Cadre'
-  const effectivePoints = points ?? (isDemo ? 1995 : undefined)
-  const effectiveCp = cp ?? (isDemo ? 6 : undefined)
-  const effectiveCpMax = cpMax ?? (isDemo ? 12 : undefined)
+  // Collapse the two modes (live roster vs. demo) into a single object so the rest
+  // of the component body never branches on `isDemo`.  When no roster is supplied
+  // the demo defaults fill every slot; prop values always take precedence.
+  const resolved = roster
+    ? { roster, stratagems: stratagems ?? [], title: title ?? '', meta, version, points, cp, cpMax }
+    : {
+        roster: SAMPLE_ROSTER,
+        stratagems: SAMPLE_STRATAGEMS,
+        title: 'Strike Cadre',
+        meta,
+        version,
+        points: points ?? 1995,
+        cp: cp ?? 6,
+        cpMax: cpMax ?? 12,
+      }
 
   const [phase, setPhase] = useState<PhaseId>('fight')
   const [openUnitIds, setOpenUnitIds] = useState<Set<string>>(new Set())
   const [drawer, setDrawer] = useState<DrawerPayload>(null)
 
-  const units = effectiveRoster[phase] ?? []
+  const units = resolved.roster[phase] ?? []
 
   // Filter detachment stratagems to those that apply to the active phase, then
   // sort so phase-specific stratagems appear first and "any phase" ones last.
@@ -55,7 +63,7 @@ export function PhaseReferenceScreen({
   // sorting by checking whether the timing string explicitly names this phase
   // (via PHASE_KEYWORDS) — if not, the stratagem is "any phase" and goes last.
   const phaseKeyword = PHASE_KEYWORDS[phase]
-  const phaseStratagems = effectiveStratagems
+  const phaseStratagems = resolved.stratagems
     .filter(s => stratagemMatchesPhase(s.timing, phase))
     .sort((a, b) => {
       const aSpecific = a.timing.toLowerCase().includes(phaseKeyword)
@@ -85,12 +93,12 @@ export function PhaseReferenceScreen({
   return (
     <div className="bf-app">
       <TopBar
-        rosterName={effectiveTitle}
-        meta={meta}
-        version={version}
-        points={effectivePoints}
-        cp={effectiveCp}
-        cpMax={effectiveCpMax}
+        rosterName={resolved.title}
+        meta={resolved.meta}
+        version={resolved.version}
+        points={resolved.points}
+        cp={resolved.cp}
+        cpMax={resolved.cpMax}
         onBack={onBack}
       />
       <PhaseNav phases={PHASES} activeId={phase} onChange={handlePhaseChange} />

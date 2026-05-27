@@ -1,5 +1,7 @@
 import type { DataManifest, Detachment, FactionArtifact, ManifestFaction } from '../dataModel'
-import { DataManifestSchema, FactionArtifactSchema, SharedDetachmentSetSchema } from '../ingest/normalize'
+// Schemas live in lib/schemas.ts — the clean runtime import target that carries no
+// ingest-layer dependencies (no BSData parser, no fetch utilities, no Node.js APIs).
+import { DataManifestSchema, FactionArtifactSchema, SharedDetachmentSetSchema } from '../schemas'
 
 /**
  * Runtime data access. This is the single seam between the app and where prepared
