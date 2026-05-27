@@ -1,4 +1,5 @@
-import { Unit, DrawerPayload } from '@/lib/types'
+import { Unit, DrawerPayload, PhaseId } from '@/lib/types'
+import { stratagemMatchesPhase } from '@/lib/stratagems'
 import { WeaponProfileRow } from './WeaponProfileRow'
 import { RuleItem } from './RuleItem'
 import { StratagemItem } from './StratagemItem'
@@ -7,6 +8,8 @@ import styles from './UnitPhaseSection.module.css'
 
 interface Props {
   unit: Unit
+  /** Active phase tab — used to filter unit stratagems to only those that apply. */
+  phase: PhaseId
   open: boolean
   onToggle: () => void
   onOpenDetail: (payload: DrawerPayload) => void
@@ -33,11 +36,18 @@ function CountChip({ n, label, tone }: { n: number; label: string; tone?: 'signa
   )
 }
 
-export function UnitPhaseSection({ unit, open, onToggle, onOpenDetail }: Props) {
+export function UnitPhaseSection({ unit, phase, open, onToggle, onOpenDetail }: Props) {
+  // Filter unit-level stratagems to those that apply to the active phase.
+  // Uses the same prose-keyword heuristic as the detachment stratagem section
+  // so "any phase" stratagems (no phase keyword in timing) still appear here.
+  const visibleStratagems = (unit.stratagems ?? []).filter(
+    s => stratagemMatchesPhase(s.timing, phase)
+  )
+
   const counts = {
     weapons: unit.weapons?.length ?? 0,
     rules: unit.abilities?.length ?? 0,
-    strat: unit.stratagems?.length ?? 0,
+    strat: visibleStratagems.length,
   }
 
   return (
@@ -120,12 +130,12 @@ export function UnitPhaseSection({ unit, open, onToggle, onOpenDetail }: Props) 
             </>
           )}
 
-          {unit.stratagems?.length > 0 && (
+          {visibleStratagems.length > 0 && (
             <>
               <hr className="bf-rule" />
-              <SubSection label="Stratagems" count={unit.stratagems.length}>
+              <SubSection label="Stratagems" count={visibleStratagems.length}>
                 <div className={styles.itemList}>
-                  {unit.stratagems.map((s, i) => (
+                  {visibleStratagems.map((s, i) => (
                     <div key={`${s.name}-${i}`} className={i > 0 ? styles.itemSep : undefined}>
                       <StratagemItem strat={s} unit={unit} onOpen={onOpenDetail} />
                     </div>

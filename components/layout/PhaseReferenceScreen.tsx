@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { PhaseId, DrawerPayload, Roster, Strat } from '@/lib/types'
 import { PHASES, SAMPLE_ROSTER, SAMPLE_STRATAGEMS } from '@/lib/sampleData'
+import { stratagemMatchesPhase, PHASE_KEYWORDS } from '@/lib/stratagems'
 import { TopBar } from './TopBar'
 import { PhaseNav } from './PhaseNav'
 import { PhaseSummary } from './PhaseSummary'
@@ -47,9 +48,21 @@ export function PhaseReferenceScreen({
   const [drawer, setDrawer] = useState<DrawerPayload>(null)
 
   const units = effectiveRoster[phase] ?? []
-  // Show all detachment stratagems on every phase — the prose-heuristic phase filter was hiding
-  // most faction stratagems on any given phase tab, making the section look broken.
+
+  // Filter detachment stratagems to those that apply to the active phase, then
+  // sort so phase-specific stratagems appear first and "any phase" ones last.
+  // stratagemMatchesPhase returns true for both groups; we distinguish them for
+  // sorting by checking whether the timing string explicitly names this phase
+  // (via PHASE_KEYWORDS) — if not, the stratagem is "any phase" and goes last.
+  const phaseKeyword = PHASE_KEYWORDS[phase]
   const phaseStratagems = effectiveStratagems
+    .filter(s => stratagemMatchesPhase(s.timing, phase))
+    .sort((a, b) => {
+      const aSpecific = a.timing.toLowerCase().includes(phaseKeyword)
+      const bSpecific = b.timing.toLowerCase().includes(phaseKeyword)
+      if (aSpecific === bSpecific) return 0
+      return aSpecific ? -1 : 1
+    })
 
   function handlePhaseChange(id: PhaseId) {
     setPhase(id)
@@ -91,6 +104,7 @@ export function PhaseReferenceScreen({
           <UnitPhaseSection
             key={u.id}
             unit={u}
+            phase={phase}
             open={openUnitIds.has(u.id)}
             onToggle={() => handleToggleUnit(u.id)}
             onOpenDetail={setDrawer}
