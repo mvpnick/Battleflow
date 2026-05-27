@@ -10,6 +10,7 @@
     "ingest": "tsx lib/ingest/cli.ts",
     "ingest:wahapedia": "tsx lib/ingest/wahapediaCli.ts",
     "ingest:dedup": "tsx lib/ingest/dedupCli.ts",
+    "ingest:summarise": "tsx lib/ingest/summariseCli.ts",
     "test": "vitest run"
   },
   "dependencies": {
@@ -18,6 +19,7 @@
     "react-dom": "19.2.4"
   },
   "devDependencies": {
+    "@anthropic-ai/sdk": "^0.98.0",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",

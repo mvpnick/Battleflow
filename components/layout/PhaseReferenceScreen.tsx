@@ -11,22 +11,6 @@ import { UnitPhaseSection } from '@/components/roster/UnitPhaseSection'
 import { DetailDrawer } from '@/components/roster/DetailDrawer'
 import styles from './PhaseReferenceScreen.module.css'
 
-const PHASE_WORDS: Record<PhaseId, string> = {
-  command: 'command',
-  movement: 'movement',
-  shooting: 'shooting',
-  charge: 'charge',
-  fight: 'fight',
-  battleshock: 'battleshock',
-}
-
-function stratagemMatchesPhase(timing: string, phase: PhaseId): boolean {
-  const t = timing.toLowerCase()
-  const hasAnyPhaseWord = Object.values(PHASE_WORDS).some(w => t.includes(w))
-  if (!hasAnyPhaseWord) return true
-  return t.includes(PHASE_WORDS[phase])
-}
-
 interface Props {
   roster?: Roster
   stratagems?: Strat[]
@@ -63,7 +47,9 @@ export function PhaseReferenceScreen({
   const [drawer, setDrawer] = useState<DrawerPayload>(null)
 
   const units = effectiveRoster[phase] ?? []
-  const phaseStratagems = effectiveStratagems.filter(s => stratagemMatchesPhase(s.timing, phase))
+  // Show all detachment stratagems on every phase — the prose-heuristic phase filter was hiding
+  // most faction stratagems on any given phase tab, making the section look broken.
+  const phaseStratagems = effectiveStratagems
 
   function handlePhaseChange(id: PhaseId) {
     setPhase(id)
