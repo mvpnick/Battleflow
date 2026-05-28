@@ -25,10 +25,18 @@ function matchUnit(name: string, units: PreparedUnit[]): PreparedUnit | undefine
 }
 
 /** Keep only weapons whose normalized name is in the parsed wargear set.
- *  Empty set means no wargear was parsed (format without bullet lines) → pass all through. */
+ *  Empty set means no wargear was parsed (format without bullet lines) → pass all through.
+ *  BSData names multi-profile weapons with a leading ➤ and a " - <profile>" suffix
+ *  (e.g. "➤ Great axe of Khorne - strike"). Army list exports name the weapon without
+ *  those decorations, so we also match against the stripped base name. */
 function filterWeapons(weapons: Weapon[], wargearSet: Set<string>): Weapon[] {
   if (wargearSet.size === 0) return weapons
-  return weapons.filter(w => wargearSet.has(norm(w.name)))
+  return weapons.filter(w => {
+    if (wargearSet.has(norm(w.name))) return true
+    if (!w.name.startsWith('➤')) return false
+    const base = norm(w.name.replace(/^➤\s*/, '').replace(/\s+-\s+.+$/, ''))
+    return wargearSet.has(base)
+  })
 }
 
 export type RosterMeta = {
