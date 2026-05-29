@@ -51,7 +51,7 @@ export function PhaseReferenceScreen({
         cpMax: cpMax ?? 12,
       }
 
-  const [phase, setPhase] = useState<PhaseId>('fight')
+  const [phase, setPhase] = useState<PhaseId>('command')
   const [openUnitIds, setOpenUnitIds] = useState<Set<string>>(new Set())
   const [drawer, setDrawer] = useState<DrawerPayload>(null)
 
