@@ -6,7 +6,7 @@ export type StoredRoster = {
   meta: RosterMeta
 }
 
-const KEY = 'bf_roster_v1'
+const KEY = 'bf_roster_v2'
 
 export function saveRoster(data: StoredRoster): boolean {
   try {

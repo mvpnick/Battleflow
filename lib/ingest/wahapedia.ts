@@ -1,5 +1,5 @@
 import { parse, type HTMLElement } from 'node-html-parser'
-import type { Strat } from '../types'
+import type { Rule, Strat } from '../types'
 
 /**
  * Offline Wahapedia stratagem scraper.
@@ -144,4 +144,75 @@ export function parseStratagems(html: string, source: string): DetachmentStratag
 /** Fetch + parse a faction's Wahapedia stratagems in one step. */
 export async function scrapeFaction(slug: string, source: string): Promise<DetachmentStratagems[]> {
   return parseStratagems(await fetchFactionPage(slug), source)
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// Enhancements
+//
+// Enhancements live in `<h2>Enhancements</h2>` sections, one per detachment.
+// Each card is a small table whose `<td>` contains:
+//   <ul class="EnhancementsPts"><li><span>NAME</span> <span>N pts</span></li></ul>
+//   <p class="ShowFluff legend2">flavour text…</p>
+//   <p>rules text…</p>
+// Detachment grouping is implicit in document order: each `<h2 class="outline_header">`
+// names the detachment whose enhancement cards follow it, until the next outline header.
+// ─────────────────────────────────────────────────────────────────────────
+
+/** Enhancements for one detachment, keyed by the detachment's display name. */
+export type DetachmentEnhancements = { name: string; enhancements: Rule[] }
+
+/**
+ * Parse one `ul.EnhancementsPts` card into a {@link Rule}. The `<ul>`'s first `<span>` is
+ * the name; the rules paragraph is the last non-fluff `<p>` in the same `<td>`.
+ */
+function parseEnhancementCard(ul: HTMLElement, source: string): Rule | null {
+  const li = ul.querySelector('li')
+  if (!li) return null
+  const name = li.querySelector('span')?.text.trim()
+  if (!name) return null
+
+  // The rules paragraph sits in the same <td> as the <ul>. There's also a
+  // fluff <p class="ShowFluff legend2"> we want to skip.
+  const td = ul.closest('td')
+  if (!td) return null
+  const ps = td.querySelectorAll('p')
+  let rulesHtml = ''
+  for (let i = ps.length - 1; i >= 0; i--) {
+    if (!ps[i].classList.contains('ShowFluff')) {
+      rulesHtml = ps[i].innerHTML
+      break
+    }
+  }
+
+  return {
+    name,
+    timing: '',
+    effect: rulesHtml ? htmlToText(rulesHtml) : '',
+    source,
+  }
+}
+
+/**
+ * Parse all enhancement cards from a faction page's HTML, grouped by detachment in the
+ * order they first appear. `source` is the faction display name, recorded on each `Rule`.
+ */
+export function parseEnhancements(html: string, source: string): DetachmentEnhancements[] {
+  const root = parse(html)
+  const groups = new Map<string, Rule[]>()
+  let currentDet: string | null = null
+
+  for (const node of root.querySelectorAll('h2.outline_header, ul.EnhancementsPts')) {
+    if (node.tagName === 'H2') {
+      currentDet = node.text.trim()
+      continue
+    }
+    if (!currentDet) continue
+    const enh = parseEnhancementCard(node, source)
+    if (!enh) continue
+    const list = groups.get(currentDet) ?? []
+    list.push(enh)
+    groups.set(currentDet, list)
+  }
+
+  return [...groups.entries()].map(([name, enhancements]) => ({ name, enhancements }))
 }

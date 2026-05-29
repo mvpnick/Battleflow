@@ -1,3 +1,7 @@
+/* ─────────────────────────────────────────────────────────────
+   Card shell
+   ───────────────────────────────────────────────────────────── */
+
 .card {
   background: var(--surface-1);
   border: 1px solid var(--border-faint);
@@ -7,6 +11,11 @@
   box-shadow: var(--elev-1);
 }
 
+/* ─────────────────────────────────────────────────────────────
+   Header — single row: caret, unit name, mini-profile.
+   Tapping the header toggles the expanded datasheet body.
+   ───────────────────────────────────────────────────────────── */
+
 .header {
   appearance: none;
   border: 0;
@@ -15,15 +24,8 @@
   text-align: left;
   padding: 12px 14px;
   display: flex;
-  flex-direction: column;
-  gap: 6px;
-  position: relative;
-}
-
-.row1 {
-  display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
 }
 
 .caret {
@@ -49,65 +51,45 @@
   white-space: nowrap;
 }
 
-.tags {
-  display: flex;
-  gap: 4px;
+/* Mini-profile: M · T · SV · W, always on, right-aligned at the end of the header. */
+.miniProfile {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 10px;
+  font-family: var(--f-mono);
+  font-size: 12px;
+  color: var(--fg-mute);
   flex-shrink: 0;
 }
 
-.tag {
-  font-family: var(--f-mono);
-  font-size: 9px;
-  letter-spacing: 0.1em;
-  color: var(--fg-mute);
-  padding: 2px 5px;
-  background: var(--surface-2);
-  border: 1px solid var(--border-faint);
-  border-radius: 2px;
-  line-height: 1.1;
-}
-
-.row2 {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding-left: 22px;
-  font-size: 12px;
-  color: var(--fg-mute);
-}
-
-.role { color: var(--fg-soft); }
-.divider { color: var(--border-strong); }
-
-.models {
-  font-family: var(--f-mono);
-  font-size: 11px;
-}
-.modelN { color: var(--fg); }
-.modelLabel { color: var(--fg-dim); }
-
-.row3 {
-  padding-left: 22px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  flex-wrap: wrap;
-}
-
-.countChip {
+.miniStat {
   display: inline-flex;
   align-items: baseline;
-  gap: 3px;
-  font-family: var(--f-mono);
-  font-size: 11px;
-  color: var(--fg-mute);
-  letter-spacing: 0.01em;
-  line-height: 1.1;
+  gap: 2px;
 }
 
-.countN { color: var(--fg); font-weight: 600; }
-.countSignal .countN { color: var(--signal); }
-.countLabel { font-size: 10px; }
+.miniKey {
+  color: var(--fg-dim);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+}
+
+.miniValue {
+  color: var(--fg);
+  font-weight: 600;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Hot chips — out-of-phase reminders that ride above the menu.
+   Indented to align with the menu content column.
+   ───────────────────────────────────────────────────────────── */
+
+.hotRow {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  padding: 0 14px 8px 38px;
+}
 
 .hotChip {
   font-family: var(--f-ui);
@@ -122,6 +104,143 @@
   padding: 2px 5px;
   line-height: 1.1;
 }
+
+/*
+  Enhancement chips share the hot row's modifier palette but render as
+  tappable pills (rounded, slightly larger) so the player can spot — and
+  open — the relic's full description in the drawer.
+*/
+.enhancementChip {
+  appearance: none;
+  font-family: var(--f-ui);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--modifier);
+  background: var(--modifier-dim);
+  border: 1px solid var(--modifier-line);
+  border-radius: 999px;
+  padding: 2px 8px;
+  line-height: 1.1;
+  cursor: pointer;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Decision menu — always visible. "Can do" abilities as chips,
+   "Can shoot / Can fight" weapons as one-liners with stats.
+   Each chip / weapon row opens the drawer for that item.
+   ───────────────────────────────────────────────────────────── */
+
+.menu {
+  border-top: 1px solid var(--border-faint);
+  padding: 10px 14px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.menuRow {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.menuLabel {
+  flex: 0 0 64px;
+  font-family: var(--f-ui);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--fg-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding-top: 4px;
+}
+
+/* Ability chips wrap freely under the "Can do" label. */
+.chipRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+}
+
+.abilityChip {
+  appearance: none;
+  border: 1px solid var(--border-faint);
+  background: var(--surface-2);
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-family: var(--f-ui);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--fg-soft);
+  line-height: 1.2;
+}
+
+/* Weapon list stacks one-liners; multi-profile groups indent their sub-profiles. */
+.weaponList {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.weaponRow {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  width: 100%;
+  padding: 4px 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  border-radius: var(--r-2);
+}
+
+.weaponRowIndented {
+  padding-left: 16px;
+}
+
+.weaponName {
+  font-family: var(--f-ui);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--fg);
+}
+
+.multiGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.multiHeader {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 2px 6px;
+}
+
+.chooseOne {
+  font-family: var(--f-ui);
+  font-size: 10px;
+  color: var(--fg-dim);
+  font-style: italic;
+}
+
+.multiProfiles {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Expanded datasheet body — phase-agnostic, full profile.
+   ───────────────────────────────────────────────────────────── */
 
 .body {
   border-top: 1px solid var(--border-faint);

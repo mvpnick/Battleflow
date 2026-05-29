@@ -148,6 +148,13 @@ export const DetachmentSchema = z.object({
    */
   rules: z.array(GlossaryRuleSchema),
   stratagems: z.array(StratSchema),
+  /**
+   * Character enhancements available in this detachment, merged in from Wahapedia
+   * (BSData does not model enhancement rules as machine-readable profiles). Optional
+   * because older artifacts pre-date this field and detachments synthesized from
+   * pages we haven't scraped have no enhancement data.
+   */
+  enhancements: z.array(RuleSchema).optional(),
 })
 
 // ---------------------------------------------------------------------------

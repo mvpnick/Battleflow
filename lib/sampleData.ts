@@ -18,6 +18,7 @@ export const SAMPLE_ROSTER: Roster = {
       models: 5,
       tags: ['MELEE', 'AURA'],
       hot: ['+1 Atk if charged'],
+      enhancements: [],
       weapons: [
         {
           name: 'Power Blades',
@@ -84,6 +85,7 @@ export const SAMPLE_ROSTER: Roster = {
       models: 1,
       tags: ['MELEE', 'VEHICLE'],
       hot: ['Devastating Wounds'],
+      enhancements: [],
       weapons: [
         {
           name: 'Demolisher Fist',
@@ -131,6 +133,7 @@ export const SAMPLE_ROSTER: Roster = {
       models: 1,
       tags: ['MELEE', 'LEADER'],
       hot: ['+1 Atk aura'],
+      enhancements: [],
       weapons: [
         {
           name: 'Reliquary Maul',
@@ -163,6 +166,7 @@ export const SAMPLE_ROSTER: Roster = {
       models: 10,
       tags: ['RANGED', 'HAZARDOUS'],
       hot: ['+1 Hit if stationary'],
+      enhancements: [],
       weapons: [
         {
           name: 'Plasma Rifle',
@@ -217,6 +221,7 @@ export const SAMPLE_ROSTER: Roster = {
       models: 2,
       tags: ['RANGED', 'FAST'],
       hot: [],
+      enhancements: [],
       weapons: [
         {
           name: 'Burst Cannon',

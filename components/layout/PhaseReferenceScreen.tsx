@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { PhaseId, DrawerPayload, Roster, Strat } from '@/lib/types'
 import { PHASES, SAMPLE_ROSTER, SAMPLE_STRATAGEMS } from '@/lib/sampleData'
-import { stratagemMatchesPhase, PHASE_KEYWORDS } from '@/lib/stratagems'
+import { stratagemMatchesPhase, stratagemNamesPhase } from '@/lib/stratagems'
 import { TopBar } from './TopBar'
 import { PhaseNav } from './PhaseNav'
 import { PhaseSummary } from './PhaseSummary'
@@ -55,19 +55,26 @@ export function PhaseReferenceScreen({
   const [openUnitIds, setOpenUnitIds] = useState<Set<string>>(new Set())
   const [drawer, setDrawer] = useState<DrawerPayload>(null)
 
-  const units = resolved.roster[phase] ?? []
+  // Phase rosters from `buildRoster` may contain units that exist for the
+  // phase only because of the unfiltered baseline (e.g. command-phase entries
+  // for every unit). With the redesigned card, a unit with zero phase-relevant
+  // abilities AND zero phase-relevant weapons has nothing to surface as an
+  // option — hide it from the list entirely. Reinforces the "this list is
+  // your menu of actions for this phase" mental model.
+  const units = (resolved.roster[phase] ?? []).filter(
+    u => u.abilities.length > 0 || u.weapons.length > 0,
+  )
 
   // Filter detachment stratagems to those that apply to the active phase, then
   // sort so phase-specific stratagems appear first and "any phase" ones last.
   // stratagemMatchesPhase returns true for both groups; we distinguish them for
-  // sorting by checking whether the timing string explicitly names this phase
-  // (via PHASE_KEYWORDS) — if not, the stratagem is "any phase" and goes last.
-  const phaseKeyword = PHASE_KEYWORDS[phase]
+  // sorting via stratagemNamesPhase — if the timing string doesn't explicitly
+  // name this phase, the stratagem is "any phase" and goes last.
   const phaseStratagems = resolved.stratagems
     .filter(s => stratagemMatchesPhase(s.timing, phase))
     .sort((a, b) => {
-      const aSpecific = a.timing.toLowerCase().includes(phaseKeyword)
-      const bSpecific = b.timing.toLowerCase().includes(phaseKeyword)
+      const aSpecific = stratagemNamesPhase(a.timing, phase)
+      const bSpecific = stratagemNamesPhase(b.timing, phase)
       if (aSpecific === bSpecific) return 0
       return aSpecific ? -1 : 1
     })
@@ -112,7 +119,6 @@ export function PhaseReferenceScreen({
           <UnitPhaseSection
             key={u.id}
             unit={u}
-            phase={phase}
             open={openUnitIds.has(u.id)}
             onToggle={() => handleToggleUnit(u.id)}
             onOpenDetail={setDrawer}

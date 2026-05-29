@@ -13,7 +13,9 @@ const PHASE_IDS: PhaseId[] = ['command', 'movement', 'shooting', 'charge', 'figh
  * this should bucket by those instead.
  */
 export function toRoster(artifact: FactionArtifact): Roster {
-  const units = [...artifact.units].sort((a, b) => a.name.localeCompare(b.name)) as Unit[]
+  const units: Unit[] = [...artifact.units]
+    .sort((a, b) => a.name.localeCompare(b.name))
+    .map(u => ({ ...u, enhancements: [] }))
   const roster: Roster = {}
   for (const phase of PHASE_IDS) roster[phase] = units
   return roster

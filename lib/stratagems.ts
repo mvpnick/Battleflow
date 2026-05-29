@@ -3,56 +3,54 @@
  *
  * Stratagems carry no structured phase field — `Strat.timing` is Wahapedia
  * prose (e.g. "Fight phase", "Your opponent's Shooting phase", "After enemy
- * unit fights").  Phase matching is therefore a keyword heuristic: if the
- * timing string contains a known phase word the stratagem is considered
- * phase-specific; if it contains no phase word it is shown on every phase tab.
+ * unit fights"). Phase matching is therefore a keyword heuristic: if the
+ * timing string contains a known phase pattern the stratagem is considered
+ * phase-specific; if it contains none it is shown on every phase tab.
+ *
+ * Round-boundary phrasing maps to the structural turn that owns the boundary:
+ *  - "start of the (battle) round" → command phase (first phase of the round).
+ *  - "end of the (battle) round"   → battleshock (last step of the round).
  */
 
 import { PhaseId } from '@/lib/types'
 
+const ROUND_DET = '(?:the |a |an |any |each |every |its |next |the next )?'
+const ROUND_START_RE = new RegExp(`\\bstart of ${ROUND_DET}(?:battle )?round\\b`, 'i')
+const ROUND_END_RE   = new RegExp(`\\bend of ${ROUND_DET}(?:battle )?round\\b`, 'i')
+
 // ---------------------------------------------------------------------------
-// Phase keyword map
-// Each PhaseId maps to the lowercase substring that identifies that phase
-// inside a free-form Wahapedia timing string.
+// Per-phase patterns. Each PhaseId maps to one-or-more case-insensitive
+// patterns; a stratagem's timing string is phase-specific for `phase` iff any
+// of `PHASE_PATTERNS[phase]` matches it.
 // ---------------------------------------------------------------------------
 
-export const PHASE_KEYWORDS: Record<PhaseId, string> = {
-  command:     'command',
-  movement:    'movement',
-  shooting:    'shooting',
-  charge:      'charge',
-  fight:       'fight',
-  battleshock: 'battleshock',
+export const PHASE_PATTERNS: Record<PhaseId, RegExp[]> = {
+  command:     [/\bcommand\b/i, ROUND_START_RE],
+  movement:    [/\bmovement\b/i],
+  shooting:    [/\bshooting\b/i],
+  charge:      [/\bcharge\b/i],
+  fight:       [/\bfight\b/i],
+  battleshock: [/\bbattle-?shock\b/i, ROUND_END_RE],
 }
 
-// Pre-computed flat list of every known phase keyword (used for the
-// "does this timing mention *any* phase?" check).
-const ALL_PHASE_WORDS = Object.values(PHASE_KEYWORDS)
+/** True iff `timing` explicitly names `phase` (via any of its patterns). */
+export function stratagemNamesPhase(timing: string, phase: PhaseId): boolean {
+  return PHASE_PATTERNS[phase].some(p => p.test(timing))
+}
 
 /**
  * Returns `true` when a stratagem should appear on the given phase tab.
  *
  * Rules:
- *  - If `timing` contains none of the known phase keywords → "any phase"
+ *  - If `timing` matches none of the known phase patterns → "any phase"
  *    stratagem → show on every tab (return `true`).
- *  - If `timing` contains at least one known phase keyword → phase-specific
- *    stratagem → show only on tabs whose keyword also appears (return `true`
- *    only when `PHASE_KEYWORDS[phase]` is present in `timing`).
- *
- * The comparison is case-insensitive so "Fight phase", "fight", and
- * "FIGHT PHASE" all match the `fight` tab.
+ *  - If `timing` matches at least one phase pattern → phase-specific
+ *    stratagem → show only on tabs whose pattern also matches.
  */
 export function stratagemMatchesPhase(timing: string, phase: PhaseId): boolean {
-  const lower = timing.toLowerCase()
-
-  // Check whether *any* phase word appears in this timing string.
-  const isPhaseSpecific = ALL_PHASE_WORDS.some(word => lower.includes(word))
-
-  if (!isPhaseSpecific) {
-    // No phase keyword found → "any phase" → show everywhere.
-    return true
-  }
-
-  // Phase-specific: show only when the active phase's keyword is present.
-  return lower.includes(PHASE_KEYWORDS[phase])
+  const isPhaseSpecific = Object.values(PHASE_PATTERNS).some(arr =>
+    arr.some(p => p.test(timing)),
+  )
+  if (!isPhaseSpecific) return true
+  return stratagemNamesPhase(timing, phase)
 }

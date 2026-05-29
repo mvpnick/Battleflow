@@ -14,9 +14,10 @@ interface Props {
   onClose: () => void
 }
 
-function kindLabel(kind: 'weapon' | 'ability' | 'stratagem') {
+function kindLabel(kind: 'weapon' | 'ability' | 'stratagem' | 'enhancement') {
   if (kind === 'weapon') return 'Weapon'
   if (kind === 'ability') return 'Ability'
+  if (kind === 'enhancement') return 'Enhancement'
   return 'Stratagem'
 }
 
@@ -68,15 +69,17 @@ export function DetailDrawer({ open, payload, onClose }: Props) {
     </>
   ) : null
 
-  const r = (kind === 'ability' || kind === 'stratagem') ? (data as Rule | Strat) : null
+  const r = (kind === 'ability' || kind === 'stratagem' || kind === 'enhancement') ? (data as Rule | Strat) : null
   const ruleContent = r ? (
     <>
       <DrawerField label="Effect">
         <p className={styles.effectText}>{r.effect}</p>
       </DrawerField>
-      <DrawerField label="Timing">
-        <span className={styles.timing}>{r.timing}</span>
-      </DrawerField>
+      {r.timing && (
+        <DrawerField label="Timing">
+          <span className={styles.timing}>{r.timing}</span>
+        </DrawerField>
+      )}
       <DrawerField label="Conditions">
         <div className={styles.pills}>
           {r.cond && <ConditionPill kind="cond">{r.cond}</ConditionPill>}
