@@ -1,6 +1,154 @@
 import { describe, it, expect } from 'vitest'
 import { parseGwText } from '../parseGwText'
 
+// ── BattleBase format (compact — no blank lines between units) ────────────────
+
+describe('parseGwText – BattleBase format', () => {
+  const BB_SAMPLE = `
+If you can't beat 'em - eat 'em (2000 Points)
+Chaos Daemons
+Daemonic Incursion
+Strike Force (2000 Points)
+CHARACTERS
+Be'lakor (375 Points)
+    • Warlord
+    • 1x Betraying Shades
+    • 1x The Blade of Shadows
+Bloodthirster (325 Points)
+    • 1x Great axe of Khorne
+    • 1x Hellfire breath
+    • Enhancement: A'rgath, The King of Blades
+BATTLELINE
+Plaguebearers (110 Points)
+    • 1x Plagueridden
+        ◦ 1x Plaguesword
+    • 9x Plaguebearer
+        ◦ 9x Plaguesword
+OTHER DATASHEETS
+Beasts of Nurgle (65 Points)
+    • 1x Putrid appendages
+Exported with BattleBase, Data Version: v20260524
+`.trim()
+
+  it('extracts factionKeyword from the preamble', () => {
+    expect(parseGwText(BB_SAMPLE).factionKeyword).toBe('Chaos Daemons')
+  })
+
+  it('extracts detachment from the preamble', () => {
+    expect(parseGwText(BB_SAMPLE).detachment).toBe('Daemonic Incursion')
+  })
+
+  it('extracts totalPoints from the army-name line', () => {
+    expect(parseGwText(BB_SAMPLE).totalPoints).toBe(2000)
+  })
+
+  it('parses all real units', () => {
+    const names = parseGwText(BB_SAMPLE).units.map(u => u.name)
+    expect(names).toContain("Be'lakor")
+    expect(names).toContain('Bloodthirster')
+    expect(names).toContain('Plaguebearers')
+    expect(names).toContain('Beasts of Nurgle')
+  })
+
+  it('extracts wargear from count-prefixed indented bullets', () => {
+    const bt = parseGwText(BB_SAMPLE).units.find(u => u.name === 'Bloodthirster')!
+    expect(bt.wargear).toContain('Great axe of Khorne')
+    expect(bt.wargear).toContain('Hellfire breath')
+  })
+
+  it('extracts enhancement from "Enhancement:" prefix', () => {
+    const bt = parseGwText(BB_SAMPLE).units.find(u => u.name === 'Bloodthirster')!
+    expect(bt.enhancements).toContain("A'rgath, The King of Blades")
+    expect(bt.wargear).not.toContain("A'rgath, The King of Blades")
+  })
+
+  it('extracts sub-model wargear from doubly-indented ◦ bullets', () => {
+    const pb = parseGwText(BB_SAMPLE).units.find(u => u.name === 'Plaguebearers')!
+    expect(pb.wargear).toContain('Plaguesword')
+  })
+
+  it('does not treat "Exported with BattleBase" line as a unit', () => {
+    const names = parseGwText(BB_SAMPLE).units.map(u => u.name)
+    expect(names).not.toContain('Exported with BattleBase, Data Version: v20260524')
+  })
+})
+
+// ── New Recruit app format (spaced — blank lines between units) ───────────────
+
+describe('parseGwText – New Recruit app format', () => {
+  const NR_APP_SAMPLE = `
+If you can't beat 'em, eat 'em (2000 Points)
+
+Chaos Daemons
+Daemonic Incursion
+Strike Force (2 000 Points)
+
+CHARACTERS
+
+Be'lakor (375 Points)
+  • Warlord
+  • 1x Betraying Shades
+  • 1x The Blade of Shadows
+
+Bloodthirster (325 Points)
+  • 1x Great axe of Khorne
+  • 1x Hellfire breath
+  • Enhancements: A'rgath, The King of Blades
+
+BATTLELINE
+
+Plaguebearers (110 Points)
+  • 1x Plagueridden
+     ◦ 1x Plaguesword
+  • 9x Plaguebearer
+     ◦ 9x Plaguesword
+
+OTHER DATASHEETS
+
+Beasts of Nurgle (65 Points)
+  • 1x Putrid appendages
+
+Exported with App Version: v1.53.0 (1), Data Version: v780
+`.trim()
+
+  it('extracts factionKeyword from the preamble', () => {
+    expect(parseGwText(NR_APP_SAMPLE).factionKeyword).toBe('Chaos Daemons')
+  })
+
+  it('extracts detachment from the preamble', () => {
+    expect(parseGwText(NR_APP_SAMPLE).detachment).toBe('Daemonic Incursion')
+  })
+
+  it('extracts totalPoints from the army-name line', () => {
+    expect(parseGwText(NR_APP_SAMPLE).totalPoints).toBe(2000)
+  })
+
+  it('parses all real units', () => {
+    const names = parseGwText(NR_APP_SAMPLE).units.map(u => u.name)
+    expect(names).toContain("Be'lakor")
+    expect(names).toContain('Bloodthirster')
+    expect(names).toContain('Plaguebearers')
+    expect(names).toContain('Beasts of Nurgle')
+  })
+
+  it('extracts wargear from count-prefixed bullets', () => {
+    const bt = parseGwText(NR_APP_SAMPLE).units.find(u => u.name === 'Bloodthirster')!
+    expect(bt.wargear).toContain('Great axe of Khorne')
+    expect(bt.wargear).toContain('Hellfire breath')
+  })
+
+  it('extracts enhancement from "Enhancements:" prefix', () => {
+    const bt = parseGwText(NR_APP_SAMPLE).units.find(u => u.name === 'Bloodthirster')!
+    expect(bt.enhancements).toContain("A'rgath, The King of Blades")
+    expect(bt.wargear).not.toContain("A'rgath, The King of Blades")
+  })
+
+  it('extracts sub-model wargear from indented ◦ bullets', () => {
+    const pb = parseGwText(NR_APP_SAMPLE).units.find(u => u.name === 'Plaguebearers')!
+    expect(pb.wargear).toContain('Plaguesword')
+  })
+})
+
 // ── GW My Army format ────────────────────────────────────────────────────────
 
 describe('parseGwText – GW My Army format', () => {

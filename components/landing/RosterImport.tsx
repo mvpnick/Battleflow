@@ -81,12 +81,19 @@ export function RosterImport() {
       //   (e.g. space-marines for ADEPTUS ASTARTES).
       // Tier 3: factionName match — New Recruit often exports the display name rather than
       //   a BSData keyword (e.g. "CHAOS DAEMONS" matches factionName "Chaos Daemons").
+      // Tier 4: segment match — plain-text exports (BattleBase / NR app) emit just the
+      //   short faction name, e.g. "Chaos Daemons" from "Chaos - Chaos Daemons". Split
+      //   factionName on " - " and check each segment. Only auto-resolves when unique.
       // Fallback: show the picker rather than silently picking the wrong faction.
+      const segMatches = manifest.factions.filter(f =>
+        f.factionName.split(' - ').some(seg => norm(seg) === kwNorm)
+      )
       const match = matches.length === 1
         ? matches[0]
         : (matches.find(f => norm(f.factionKeywords[0] ?? '') === kwNorm)
           ?? matches.find(f => f.factionKeywords.length === 1)
           ?? manifest.factions.find(f => norm(f.factionName) === kwNorm)
+          ?? (segMatches.length === 1 ? segMatches[0] : null)
           ?? null)
 
       if (!match) {

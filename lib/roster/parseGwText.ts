@@ -17,8 +17,18 @@ export type ParsedArmy = {
   units: ParsedUnit[]
 }
 
+// Matches section headers: CHARACTERS, BATTLELINE, OTHER DATASHEETS, etc.
+const SECTION_RE = /^(CHARACTERS?|BATTLELINE|OTHER DATASHEETS?|EPIC HEROES?|DEDICATED TRANSPORTS?|ALLIED UNITS?|REINFORCEMENTS?)$/i
+
+// Matches any line containing a parenthetical point value: "(2000 Points)", "(65 pts)", "(2 000 Points)"
+const HAS_POINTS_RE = /\(\s*\d[\d\s,]*\s*(?:Points?|pts?)\s*\)/i
+
+// Matches a unit name line "Name (N pts)" or "Name (N Points)" — number must have no embedded spaces
+const UNIT_NAME_RE = /^(.+?)\s*\((\d[\d,]*)\s*(?:Points?|pts?)\)\s*$/i
+
 /**
- * Parse the GW My Army app text export, or the New Recruit / BattleScribe army list format.
+ * Parse the GW My Army app text export, the New Recruit / BattleScribe army list format,
+ * the BattleBase export format, or the New Recruit app plain-text export format.
  *
  * GW My Army skeleton:
  *   +++ Army Name [FACTION KEYWORD] (N pts) +++
@@ -36,11 +46,32 @@ export type ParsedArmy = {
  *   Unit Name (N pts)
  *   • Nx Weapon
  *
- * The two formats are detected automatically: presence of `+ KEY: value +` lines
- * triggers New Recruit extraction; otherwise the `+++`/`[BRACKET]`/`==` paths run.
+ * BattleBase / New Recruit app (plain-text) skeleton:
+ *   Army Name (N Points)
+ *   Faction Name
+ *   Detachment Name
+ *   Formation (N Points)
+ *   CHARACTERS
+ *   Unit Name (N Points)
+ *       • Nx Weapon            ← all bullets are uniformly indented
+ *           ◦ Sub-weapon       ← sub-model bullets are deeper
+ *       • Enhancement: Name    ← enhancement prefix instead of (+N pts)
+ *
+ * Format is detected automatically: `+ KEY: value +` lines → New Recruit structured;
+ * `+++` header → GW My Army; otherwise → plain-text (BattleBase / NR app).
  */
 export function parseGwText(raw: string): ParsedArmy {
   const lines = raw.split('\n')
+
+  // Plain-text formats (BattleBase / NR app) have neither NR `+ KEY:` headers nor `+++` GW headers.
+  const hasNrHeaders = lines.some(l => /^\+\s+FACTION KEYWORD:/i.test(l.trim()))
+  const hasGwHeader = lines.some(l => /^\+\+\+/.test(l.trim()))
+
+  if (!hasNrHeaders && !hasGwHeader) {
+    const { factionKeyword, detachment, totalPoints } = extractPlainHeader(lines)
+    const units = parsePlainTextUnits(lines)
+    return { factionKeyword, detachment, totalPoints, units }
+  }
 
   let factionKeyword = ''
   let detachment: string | undefined
@@ -114,6 +145,152 @@ export function parseGwText(raw: string): ParsedArmy {
   }
 
   return { factionKeyword, detachment, totalPoints, units }
+}
+
+/**
+ * Extract faction keyword, detachment, and total points from the preamble of a
+ * plain-text format (BattleBase / NR app). Scans lines until it hits a section
+ * header (CHARACTERS, BATTLELINE, …) or the first indented bullet, then:
+ *   - lines with a parenthetical point value → army name or formation (skipped for
+ *     faction detection; the first one supplies totalPoints)
+ *   - all-caps lines without digits → section-header noise, skipped
+ *   - remaining lines → faction name (first), detachment (second)
+ */
+function extractPlainHeader(lines: string[]): {
+  factionKeyword: string
+  detachment: string | undefined
+  totalPoints: number | undefined
+} {
+  const plainLines: string[] = []
+  let totalPoints: number | undefined
+
+  for (const line of lines) {
+    const t = line.trim()
+    if (!t) continue
+
+    if (SECTION_RE.test(t)) break
+    if (/^\s*[•◦]/.test(line)) break
+
+    if (HAS_POINTS_RE.test(t)) {
+      if (totalPoints === undefined) {
+        const m = t.match(/\(\s*(\d[\d\s,]*)\s*(?:Points?|pts?)\s*\)/i)
+        if (m) totalPoints = parseInt(m[1].replace(/[\s,]/g, ''), 10) || undefined
+      }
+      continue
+    }
+
+    plainLines.push(t)
+  }
+
+  return {
+    factionKeyword: plainLines[0] ?? '',
+    detachment: plainLines[1],
+    totalPoints,
+  }
+}
+
+/**
+ * Parse unit entries from a plain-text army list (BattleBase / NR app format).
+ * Works for both compact (no blank lines between units) and spaced (blank lines)
+ * variants: unit blocks are opened by any non-indented "Name (N pts)" line, and
+ * closed when the next unit line or section header is encountered.
+ */
+function parsePlainTextUnits(lines: string[]): ParsedUnit[] {
+  const units: ParsedUnit[] = []
+
+  type Acc = { name: string; points: number | undefined; bulletLines: string[] }
+  let current: Acc | null = null
+
+  const commit = () => {
+    if (!current) return
+    const unit = parsePlainBlock(current.name, current.points, current.bulletLines)
+    if (unit) units.push(unit)
+    current = null
+  }
+
+  for (const line of lines) {
+    const t = line.trim()
+    if (!t) continue
+
+    if (SECTION_RE.test(t)) { commit(); continue }
+
+    // Non-indented "Name (N pts)" → start of a new unit block
+    if (!/^\s/.test(line)) {
+      const m = t.match(UNIT_NAME_RE)
+      if (m) {
+        commit()
+        current = { name: m[1].trim(), points: parseInt(m[2].replace(/,/g, ''), 10), bulletLines: [] }
+        continue
+      }
+    }
+
+    if (current && /[•◦]/.test(t)) current.bulletLines.push(line)
+  }
+
+  commit()
+  return units
+}
+
+/**
+ * Parse a unit's bullet lines using relative indentation.
+ * The minimum indentation of all bullet lines is "top-level"; deeper = sub-model.
+ * Enhancement prefix ("Enhancement:" / "Enhancements:") is recognised at top level.
+ */
+function parsePlainBlock(
+  name: string,
+  points: number | undefined,
+  bulletLines: string[],
+): ParsedUnit | null {
+  if (!name) return null
+
+  let minIndent = Infinity
+  for (const line of bulletLines) {
+    const m = line.match(/^(\s*)/)
+    const indent = m ? m[1].length : 0
+    if (indent < minIndent) minIndent = indent
+  }
+  if (!isFinite(minIndent)) minIndent = 0
+
+  const wargear: string[] = []
+  const enhancements: string[] = []
+
+  for (const line of bulletLines) {
+    const t = line.trim()
+    if (!t) continue
+
+    const bulletMatch = t.match(/^[•◦*-]\s*(.+)$/)
+    if (!bulletMatch) continue
+
+    const content = bulletMatch[1].trim()
+    const indentMatch = line.match(/^(\s*)/)
+    const indent = indentMatch ? indentMatch[1].length : 0
+
+    if (indent > minIndent) {
+      // Sub-model line
+      const cm = content.match(/^(\d+)x\s+(.+)$/i)
+      wargear.push(cm ? cm[2].trim() : content)
+      continue
+    }
+
+    // Top-level bullet: Enhancement: / Enhancements: prefix
+    const enhPrefix = content.match(/^Enhancements?:\s*(.+)$/i)
+    if (enhPrefix) { enhancements.push(enhPrefix[1].trim()); continue }
+
+    if (norm(content) === 'warlord') continue
+
+    const cm = content.match(/^(\d+)x\s+(.+)$/i)
+    if (cm) { wargear.push(cm[2].trim()); continue }
+
+    // "(+N pts)" enhancement suffix
+    const enhPts = content.match(/^(.+?)\s*\(\+\d+\s*pts?\)\s*$/i)
+    if (enhPts) { enhancements.push(enhPts[1].trim()); continue }
+
+    // Bare top-level bullet with no count prefix and no enhancement marker —
+    // treat as an enhancement (same convention as parseBlock for GW/NR formats).
+    enhancements.push(content)
+  }
+
+  return { name, points, wargear, enhancements }
 }
 
 function parseBlock(lines: string[]): ParsedUnit | null {

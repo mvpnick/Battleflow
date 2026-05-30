@@ -1,0 +1,205 @@
+Version 1: 
+
++++++++++++++++++++++++++++++++++++++++++++++++
++ FACTION KEYWORD: Chaos - Chaos Daemons
++ DETACHMENT: Daemonic Incursion (Warp Rifts)
++ TOTAL ARMY POINTS: 2000pts
++
++ WARLORD: Char1: Be'lakor
++ ENHANCEMENT: A'rgath, the King of Blades (on Char3: Bloodthirster)
+& The Endless Gift (on Char4: Great Unclean One)
+& The Everstave (on Char5: Lord of Change)
++ NUMBER OF UNITS: 10
++ SECONDARY: - Bring It Down: (2x4) + (3x6) - Assassination: 5 Characters
++++++++++++++++++++++++++++++++++++++++++++++++
+
+CHARACTER
+
+Be'lakor (375 pts)
+• 1x Betraying Shades
+• 1x The Blade of Shadows
+• Warlord
+
+Bloodthirster (325 pts)
+• 1x Hellfire breath
+• 1x Great axe of Khorne
+• A'rgath, the King of Blades (+20 pts)
+
+Great Unclean One (280 pts)
+• 1x Putrid vomit
+• 1x Bilesword
+• 1x Plague flail
+• The Endless Gift (+30 pts)
+
+Kairos Fateweaver (295 pts)
+• 1x Infernal Gateway
+• 1x Staff of Tomorrow
+
+Lord of Change (310 pts)
+• 1x Bolt of Change
+• 1x Staff of Tzeentch
+• 1x Rod of sorcery
+• The Everstave (+25 pts)
+
+BATTLELINE
+
+Plaguebearers (110 pts)
+• 1x Plagueridden
+    • 1x Plaguesword
+• 9x Plaguebearer
+    • 9x Plaguesword
+    • Instrument of Chaos, Daemonic Icon
+
+Plaguebearers (110 pts)
+• 1x Plagueridden
+    • 1x Plaguesword
+• 9x Plaguebearer
+    • 9x Plaguesword
+    • Instrument of Chaos, Daemonic Icon
+
+OTHER DATASHEETS
+
+Beasts of Nurgle (65 pts)
+• 1x Beast of Nurgle
+    • 1x Putrid appendages
+
+Beasts of Nurgle (65 pts)
+• 1x Beast of Nurgle
+    • 1x Putrid appendages
+
+Flamers (65 pts)
+• 1x Pyrocaster
+    • 1x Flamer mouths
+    • 1x Flickering Flames
+• 2x Flamer
+    • 2x Flamer mouths
+    • 2x Flickering Flames
+
+-----
+
+Version 2: 
+
+If you can’t beat ‘em - eat ‘em (2000 Points)
+Chaos Daemons
+Daemonic Incursion
+Strike Force (2000 Points)
+CHARACTERS
+Be'lakor (375 Points)
+    • Warlord
+    • 1x Betraying Shades
+    • 1x The Blade of Shadows
+Bloodthirster (325 Points)
+    • 1x Great axe of Khorne
+    • 1x Hellfire breath
+    • Enhancement: A'rgath, The King of Blades
+Great Unclean One (280 Points)
+    • 1x Bilesword
+    • 1x Plague flail
+    • 1x Putrid vomit
+    • Enhancement: The Endless Gift
+Kairos Fateweaver (295 Points)
+    • 1x Infernal Gateway
+    • 1x Staff of Tomorrow
+Lord of Change (310 Points)
+    • 1x Bolt of Change
+    • 1x Rod of sorcery
+    • 1x Staff of Tzeentch
+    • Enhancement: The Everstave
+BATTLELINE
+Plaguebearers (110 Points)
+    • 1x Plagueridden
+        ◦ 1x Plaguesword
+    • 9x Plaguebearer
+        ◦ 1x Daemonic Icon
+        ◦ 1x Instrument of Chaos
+        ◦ 9x Plaguesword
+Plaguebearers (110 Points)
+    • 1x Plagueridden
+        ◦ 1x Plaguesword
+    • 9x Plaguebearer
+        ◦ 1x Daemonic Icon
+        ◦ 1x Instrument of Chaos
+        ◦ 9x Plaguesword
+OTHER DATASHEETS
+Beasts of Nurgle (65 Points)
+    • 1x Putrid appendages
+Beasts of Nurgle (65 Points)
+    • 1x Putrid appendages
+Flamers (65 Points)
+    • 1x Pyrocaster
+        ◦ 1x Flamer mouths
+        ◦ 1x Flickering flames
+    • 2x Flamer
+        ◦ 2x Flamer mouths
+        ◦ 2x Flickering flames
+Exported with BattleBase, Data Version: v20260524
+
+-----
+
+Version 3: 
+
+If you can’t beat ’em, eat ’em (2000 Points)
+
+Chaos Daemons
+Daemonic Incursion
+Strike Force (2 000 Points)
+
+CHARACTERS
+
+Be’lakor (375 Points)
+  • Warlord
+  • 1x Betraying Shades
+  • 1x The Blade of Shadows
+
+Bloodthirster (325 Points)
+  • 1x Great axe of Khorne
+  • 1x Hellfire breath
+  • Enhancements: A’rgath, The King of Blades
+
+Great Unclean One (280 Points)
+  • 1x Bilesword
+  • 1x Plague flail
+  • 1x Putrid vomit
+  • Enhancements: The Endless Gift
+
+Kairos Fateweaver (295 Points)
+  • 1x Infernal Gateway
+  • 1x Staff of Tomorrow
+
+Lord of Change (310 Points)
+  • 1x Bolt of Change
+  • 1x Rod of sorcery
+  • 1x Staff of Tzeentch
+  • Enhancements: The Everstave
+
+BATTLELINE
+
+Plaguebearers (110 Points)
+  • 1x Plagueridden
+     ◦ 1x Plaguesword
+  • 9x Plaguebearer
+     ◦ 9x Plaguesword
+
+Plaguebearers (110 Points)
+  • 1x Plagueridden
+     ◦ 1x Plaguesword
+  • 9x Plaguebearer
+     ◦ 9x Plaguesword
+
+OTHER DATASHEETS
+
+Beasts of Nurgle (65 Points)
+  • 1x Putrid appendages
+
+Beasts of Nurgle (65 Points)
+  • 1x Putrid appendages
+
+Flamers (65 Points)
+  • 1x Pyrocaster
+     ◦ 1x Flamer mouths
+     ◦ 1x Flickering flames
+  • 2x Flamer
+     ◦ 2x Flamer mouths
+     ◦ 2x Flickering flames
+
+Exported with App Version: v1.53.0 (1), Data Version: v780
