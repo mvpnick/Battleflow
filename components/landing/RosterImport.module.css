@@ -1,9 +1,9 @@
 .form {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 12px;
   width: 100%;
-  max-width: 380px;
+  max-width: 420px;
 }
 
 .label {
@@ -12,6 +12,7 @@
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--fg-dim);
+  margin-bottom: 2px;
 }
 
 .textarea {
@@ -60,9 +61,10 @@
   border: 1px solid var(--signal-line);
   border-radius: var(--r-2);
   padding: 10px 20px;
+  margin-top: 4px;
   cursor: pointer;
   transition: opacity 0.12s ease, background-color 0.12s ease;
-  align-self: flex-start;
+  align-self: center;
 }
 
 .submit:hover:not(:disabled) {
