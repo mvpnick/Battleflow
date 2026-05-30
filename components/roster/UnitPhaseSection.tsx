@@ -314,7 +314,9 @@ export function UnitPhaseSection({ unit, open, onToggle, onOpenDetail }: Props) 
         <div className={styles.body}>
           {full.stats && Object.keys(full.stats).length > 0 && (
             <SubSection label="Profile">
-              <StatRow stats={full.stats} />
+              <div className={styles.profileRow}>
+                <StatRow stats={full.stats} />
+              </div>
             </SubSection>
           )}
 

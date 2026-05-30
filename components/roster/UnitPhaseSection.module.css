@@ -260,6 +260,10 @@
   color: var(--fg-dim);
 }
 
+.profileRow {
+  padding: 0 14px 10px;
+}
+
 .itemList {
   display: flex;
   flex-direction: column;
