@@ -13,10 +13,10 @@ import { DetailDrawer } from '@/components/roster/DetailDrawer'
 import styles from './PhaseReferenceScreen.module.css'
 
 function makeLoadoutKey(unit: Unit): string {
-  const weapons = (unit.full?.weapons ?? unit.weapons).map(w => w.name).sort().join('|')
-  const enhancements = unit.enhancements.map(e => e.name).sort().join('|')
-  const hot = [...unit.hot].sort().join('|')
-  return `${unit.name}::${weapons}::${enhancements}::${hot}`
+  const weapons = (unit.full?.weapons ?? unit.weapons).map(w => w.name).sort().join('\x00')
+  const enhancements = unit.enhancements.map(e => e.name).sort().join('\x00')
+  const hot = [...unit.hot].sort().join('\x00')
+  return [unit.name, weapons, enhancements, hot].join('\x01')
 }
 
 type UnitGroup = { key: string; unit: Unit; count: number }
@@ -81,10 +81,15 @@ export function PhaseReferenceScreen({
   // abilities AND zero phase-relevant weapons has nothing to surface as an
   // option — hide it from the list entirely. Reinforces the "this list is
   // your menu of actions for this phase" mental model.
-  const units = (resolved.roster[phase] ?? []).filter(
-    u => u.abilities.length > 0 || u.weapons.length > 0,
+  const phaseUnits = resolved.roster[phase] ?? []
+  const units = phaseUnits.filter(u => u.abilities.length > 0 || u.weapons.length > 0)
+  // phaseUnits is a stable array reference (same object from the roster prop)
+  // so this memo only recomputes when the phase or roster changes, not on
+  // every drawer/expand-collapse re-render.
+  const groups = useMemo(
+    () => groupIdenticalUnits(phaseUnits.filter(u => u.abilities.length > 0 || u.weapons.length > 0)),
+    [phaseUnits],
   )
-  const groups = useMemo(() => groupIdenticalUnits(units), [units])
 
   // Filter detachment stratagems to those that apply to the active phase, then
   // sort so phase-specific stratagems appear first and "any phase" ones last.
