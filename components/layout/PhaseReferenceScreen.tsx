@@ -120,6 +120,7 @@ export function PhaseReferenceScreen({
             key={u.id}
             unit={u}
             open={openUnitIds.has(u.id)}
+            phase={phase}
             onToggle={() => handleToggleUnit(u.id)}
             onOpenDetail={setDrawer}
           />

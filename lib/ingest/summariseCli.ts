@@ -280,24 +280,29 @@ async function main() {
   if (args.dryRun) console.log('  (dry run — nothing will be written)')
   if (!args.interactive) console.log('  (non-interactive — ambiguous summaries accepted as-is)')
 
-  const apiKey = process.env.ANTHROPIC_API_KEY
-  if (!apiKey) {
-    console.error('Error: ANTHROPIC_API_KEY environment variable is not set')
-    process.exit(1)
-  }
-  const client = new Anthropic({ apiKey })
-
   const overrides = await loadOverrides()
   const effectMap = await buildDeduplicationMap(args.factions)
   const total = effectMap.size
   const cached = [...effectMap.keys()].filter((h) => overrides[h] !== undefined).length
+  const toGenerate = total - cached
 
   console.log(
-    `  ${total} unique effect(s) found — ${cached} already in cache, ${total - cached} to generate`,
+    `  ${total} unique effect(s) found — ${cached} already in cache, ${toGenerate} to generate`,
   )
 
+  // Only require the API key when there are actually uncached effects to generate.
+  let client: Anthropic | null = null
+  if (toGenerate > 0) {
+    const apiKey = process.env.ANTHROPIC_API_KEY
+    if (!apiKey) {
+      console.error('Error: ANTHROPIC_API_KEY environment variable is not set')
+      process.exit(1)
+    }
+    client = new Anthropic({ apiKey })
+  }
+
   const rl = args.interactive ? createInterface({ input, output }) : null
-  const totalToGenerate = total - cached
+  const totalToGenerate = toGenerate
 
   let generated = 0
   let humanReviewed = 0
@@ -312,7 +317,7 @@ async function main() {
 
     process.stdout.write(`  [${generated + 1}/${totalToGenerate}] ${entry.name} … `)
 
-    const candidate = await generateSummary(client, entry.name, entry.effect)
+    const candidate = await generateSummary(client!, entry.name, entry.effect)
     process.stdout.write(`"${candidate}"`)
 
     let final = candidate

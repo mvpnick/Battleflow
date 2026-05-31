@@ -11,7 +11,7 @@ interface Props {
 }
 
 export function PhaseStratagemSection({ stratagems }: Props) {
-  const [collapsed, setCollapsed] = useState(false)
+  const [collapsed, setCollapsed] = useState(true)
   const [openIds, setOpenIds] = useState<Set<string>>(new Set())
 
   if (stratagems.length === 0) return null

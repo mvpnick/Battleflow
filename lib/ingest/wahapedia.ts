@@ -108,10 +108,11 @@ function parseCard(card: HTMLElement, source: string): { group: string; strat: S
   if (!group) return null
 
   const cpText = card.querySelector('.str10CP')?.text ?? ''
-  const summary = card.querySelector('.str10Legend')?.text.trim() ?? ''
   const bodyHtml = card.querySelector('.str10Text')?.innerHTML ?? ''
   const s = splitSections(bodyHtml)
 
+  // .str10Legend is Wahapedia's flavour/fluff text — not a mechanical summary.
+  // Leave summary unset here; ingest:summarise generates and writes mechanical summaries.
   const strat: Strat = {
     name: toTitleCase(name),
     cp: parseCp(cpText),
@@ -120,7 +121,6 @@ function parseCard(card: HTMLElement, source: string): { group: string; strat: S
     effect: s.EFFECT ?? '',
     once: parseOnce([s.WHEN, s.RESTRICTIONS, s.EFFECT].filter(Boolean).join(' ')),
     source,
-    summary: summary || undefined,
   }
   return { group, strat }
 }

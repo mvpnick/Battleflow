@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { Unit, DrawerPayload, Weapon, Stats } from '@/lib/types'
+import { Unit, DrawerPayload, Weapon, Stats, PhaseId } from '@/lib/types'
 import { WeaponProfileRow } from './WeaponProfileRow'
 import { RuleItem } from './RuleItem'
 import { StatRow } from '@/components/ui/StatRow'
@@ -8,18 +8,18 @@ import styles from './UnitPhaseSection.module.css'
 interface Props {
   unit: Unit
   open: boolean
+  phase?: PhaseId
   onToggle: () => void
   onOpenDetail: (payload: DrawerPayload) => void
 }
 
-/**
- * Stat keys shown in the always-on mini-profile on the collapsed card.
- * The four "what does this thing look like at a glance" digits the player
- * cares about in any phase: how fast (M), how tough (T), how saveable (SV),
- * how chunky (W). Missing keys are silently skipped — vehicles, characters,
- * and so on may not have all four.
- */
-const MINI_PROFILE_KEYS = ['M', 'T', 'SV', 'W'] as const
+const BASE_MINI_KEYS = ['M', 'T', 'SV', 'W'] as const
+
+function miniProfileKeys(phase?: PhaseId): readonly string[] {
+  if (phase === 'battleshock') return ['LD']
+  if (phase === 'command') return [...BASE_MINI_KEYS, 'LD']
+  return BASE_MINI_KEYS
+}
 
 // ─────────────────────────────────────────────────────────────────────────
 // Multi-profile weapon grouping
@@ -93,10 +93,11 @@ function SubSection({ label, count, children }: { label: string; count?: number;
   )
 }
 
-/** M · T · SV · W on the right of the header — defensive context, always on. */
-function MiniProfile({ stats }: { stats?: Stats }) {
+/** Stat summary on the right of the header. Keys depend on active phase. */
+function MiniProfile({ stats, phase }: { stats?: Stats; phase?: PhaseId }) {
   if (!stats) return null
-  const entries = MINI_PROFILE_KEYS.filter(k => k in stats)
+  const keys = miniProfileKeys(phase)
+  const entries = keys.filter(k => k in stats)
   if (entries.length === 0) return null
   return (
     <span className={styles.miniProfile}>
@@ -179,16 +180,14 @@ function WeaponGroupView({
 }
 
 function WeaponMenuRow({
-  label, groups, unit, onOpen,
+  groups, unit, onOpen,
 }: {
-  label: string
   groups: WeaponGroup[]
   unit: Unit
   onOpen: (p: DrawerPayload) => void
 }) {
   return (
     <div className={styles.menuRow}>
-      <span className={styles.menuLabel}>{label}</span>
       <div className={styles.weaponList}>
         {groups.map((g, i) => (
           <WeaponGroupView
@@ -207,7 +206,7 @@ function WeaponMenuRow({
 // Main component
 // ─────────────────────────────────────────────────────────────────────────
 
-export function UnitPhaseSection({ unit, open, onToggle, onOpenDetail }: Props) {
+export function UnitPhaseSection({ unit, open, phase, onToggle, onOpenDetail }: Props) {
   // The collapsed menu reads from the phase-filtered top-level fields
   // (already trimmed by buildRoster). The expanded datasheet reads from
   // `unit.full` — or falls back to the top-level fields for hand-crafted
@@ -252,7 +251,7 @@ export function UnitPhaseSection({ unit, open, onToggle, onOpenDetail }: Props) 
           </svg>
         </span>
         <span className={styles.unitName}>{unit.name}</span>
-        <MiniProfile stats={full.stats} />
+        <MiniProfile stats={full.stats} phase={phase} />
       </button>
 
       {(unit.enhancements.length > 0 || unit.hot.length > 0) && (
@@ -281,7 +280,6 @@ export function UnitPhaseSection({ unit, open, onToggle, onOpenDetail }: Props) 
       <div className={styles.menu}>
         {unit.abilities.length > 0 && (
           <div className={styles.menuRow}>
-            <span className={styles.menuLabel}>Can do</span>
             <div className={styles.chipRow}>
               {unit.abilities.map((ability, i) => (
                 <button
@@ -298,11 +296,11 @@ export function UnitPhaseSection({ unit, open, onToggle, onOpenDetail }: Props) 
         )}
 
         {rangedGroups.length > 0 && (
-          <WeaponMenuRow label="Can shoot" groups={rangedGroups} unit={unit} onOpen={onOpenDetail} />
+          <WeaponMenuRow groups={rangedGroups} unit={unit} onOpen={onOpenDetail} />
         )}
 
         {meleeGroups.length > 0 && (
-          <WeaponMenuRow label="Can fight" groups={meleeGroups} unit={unit} onOpen={onOpenDetail} />
+          <WeaponMenuRow groups={meleeGroups} unit={unit} onOpen={onOpenDetail} />
         )}
       </div>
 
@@ -360,6 +358,19 @@ export function UnitPhaseSection({ unit, open, onToggle, onOpenDetail }: Props) 
                     <span>{r.text}</span>
                   </div>
                 ))}
+              </SubSection>
+            </>
+          )}
+
+          {unit.tags.length > 0 && (
+            <>
+              <hr className="bf-rule" />
+              <SubSection label="Keywords">
+                <div className={styles.keywordRow}>
+                  {unit.tags.map((tag) => (
+                    <span key={tag} className={styles.keywordPill}>{tag}</span>
+                  ))}
+                </div>
               </SubSection>
             </>
           )}

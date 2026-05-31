@@ -63,10 +63,16 @@ into small, self-contained per-faction JSON artifacts committed under `public/da
    into the artifacts written in step 1. Run after every BSData ingest, since step 1 overwrites
    the artifacts the stratagems were merged into.
 3. `npm run ingest:dedup -- [--dry-run]` to factor cross-faction-identical detachments (the shared
-   SM Codex set) into `public/data/shared/`. Run last — it reads the final artifacts (stratagems
-   already merged) and rewrites the per-faction ones with `sharedDetachments` references.
-4. Review `git diff public/data/` — it's a readable, reviewable data diff.
-5. Commit and deploy. The pinned tag + commit are recorded in `manifest.json`.
+   SM Codex set) into `public/data/shared/`. Run after Wahapedia — it reads the final artifacts
+   (stratagems already merged) and rewrites the per-faction ones with `sharedDetachments` references.
+4. `npm run ingest:summarise -- [--factions <slug,slug|all>] [--no-interactive]` to write
+   mechanical `summary` fields onto every stratagem. Run after dedup — it reads the final artifacts
+   and patches them in place. Previously-generated summaries are cached in
+   `docs/summary-overrides.json` so re-runs are instant for unchanged effects. Requires
+   `ANTHROPIC_API_KEY`. **Must be re-run after every Wahapedia ingest**, because step 2 clears any
+   summary fields that were set by a previous summarise run.
+5. Review `git diff public/data/` — it's a readable, reviewable data diff.
+6. Commit and deploy. The pinned tag + commit are recorded in `manifest.json`.
 
 ## Known limitations / deferred
 - **Phase inference is NOT done yet.** BSData has no phase field; `PreparedUnit.phases` is the
