@@ -7,6 +7,7 @@ import styles from './UnitPhaseSection.module.css'
 
 interface Props {
   unit: Unit
+  count?: number
   open: boolean
   phase?: PhaseId
   onToggle: () => void
@@ -206,7 +207,7 @@ function WeaponMenuRow({
 // Main component
 // ─────────────────────────────────────────────────────────────────────────
 
-export function UnitPhaseSection({ unit, open, phase, onToggle, onOpenDetail }: Props) {
+export function UnitPhaseSection({ unit, count, open, phase, onToggle, onOpenDetail }: Props) {
   // The collapsed menu reads from the phase-filtered top-level fields
   // (already trimmed by buildRoster). The expanded datasheet reads from
   // `unit.full` — or falls back to the top-level fields for hand-crafted
@@ -251,6 +252,9 @@ export function UnitPhaseSection({ unit, open, phase, onToggle, onOpenDetail }: 
           </svg>
         </span>
         <span className={styles.unitName}>{unit.name}</span>
+        {count != null && count > 1 && (
+          <span className={styles.countBadge}>×{count}</span>
+        )}
         <MiniProfile stats={full.stats} phase={phase} />
       </button>
 

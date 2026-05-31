@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { PhaseId, DrawerPayload, Roster, Strat } from '@/lib/types'
+import { useState, useMemo } from 'react'
+import { PhaseId, DrawerPayload, Roster, Strat, Unit } from '@/lib/types'
 import { PHASES, SAMPLE_ROSTER, SAMPLE_STRATAGEMS } from '@/lib/sampleData'
 import { stratagemMatchesPhase, stratagemNamesPhase } from '@/lib/stratagems'
 import { TopBar } from './TopBar'
@@ -11,6 +11,26 @@ import { PhaseStratagemSection } from './PhaseStratagemSection'
 import { UnitPhaseSection } from '@/components/roster/UnitPhaseSection'
 import { DetailDrawer } from '@/components/roster/DetailDrawer'
 import styles from './PhaseReferenceScreen.module.css'
+
+function makeLoadoutKey(unit: Unit): string {
+  const weapons = (unit.full?.weapons ?? unit.weapons).map(w => w.name).sort().join('|')
+  const enhancements = unit.enhancements.map(e => e.name).sort().join('|')
+  const hot = [...unit.hot].sort().join('|')
+  return `${unit.name}::${weapons}::${enhancements}::${hot}`
+}
+
+type UnitGroup = { key: string; unit: Unit; count: number }
+
+function groupIdenticalUnits(units: Unit[]): UnitGroup[] {
+  const map = new Map<string, UnitGroup>()
+  for (const unit of units) {
+    const key = makeLoadoutKey(unit)
+    const existing = map.get(key)
+    if (existing) { existing.count++; continue }
+    map.set(key, { key, unit, count: 1 })
+  }
+  return [...map.values()]
+}
 
 interface Props {
   roster?: Roster
@@ -52,7 +72,7 @@ export function PhaseReferenceScreen({
       }
 
   const [phase, setPhase] = useState<PhaseId>('command')
-  const [openUnitIds, setOpenUnitIds] = useState<Set<string>>(new Set())
+  const [openGroupKeys, setOpenGroupKeys] = useState<Set<string>>(new Set())
   const [drawer, setDrawer] = useState<DrawerPayload>(null)
 
   // Phase rosters from `buildRoster` may contain units that exist for the
@@ -64,6 +84,7 @@ export function PhaseReferenceScreen({
   const units = (resolved.roster[phase] ?? []).filter(
     u => u.abilities.length > 0 || u.weapons.length > 0,
   )
+  const groups = useMemo(() => groupIdenticalUnits(units), [units])
 
   // Filter detachment stratagems to those that apply to the active phase, then
   // sort so phase-specific stratagems appear first and "any phase" ones last.
@@ -82,19 +103,19 @@ export function PhaseReferenceScreen({
   function handlePhaseChange(id: PhaseId) {
     setPhase(id)
     setDrawer(null)
-    setOpenUnitIds(new Set())
+    setOpenGroupKeys(new Set())
   }
 
-  function handleToggleUnit(id: string) {
-    setOpenUnitIds(prev => {
+  function handleToggleUnit(key: string) {
+    setOpenGroupKeys(prev => {
       const next = new Set(prev)
-      if (next.has(id)) next.delete(id); else next.add(id)
+      if (next.has(key)) next.delete(key); else next.add(key)
       return next
     })
   }
 
   function handleExpandAll() {
-    setOpenUnitIds(new Set(units.map(u => u.id)))
+    setOpenGroupKeys(new Set(groups.map(g => g.key)))
   }
 
   return (
@@ -115,13 +136,14 @@ export function PhaseReferenceScreen({
 
         <PhaseStratagemSection stratagems={phaseStratagems} />
 
-        {units.map(u => (
+        {groups.map(g => (
           <UnitPhaseSection
-            key={u.id}
-            unit={u}
-            open={openUnitIds.has(u.id)}
+            key={g.key}
+            unit={g.unit}
+            count={g.count}
+            open={openGroupKeys.has(g.key)}
             phase={phase}
-            onToggle={() => handleToggleUnit(u.id)}
+            onToggle={() => handleToggleUnit(g.key)}
             onOpenDetail={setDrawer}
           />
         ))}
