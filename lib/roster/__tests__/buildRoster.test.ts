@@ -88,6 +88,64 @@ describe('buildRoster – detachment matching', () => {
   })
 })
 
+// ── Army & detachment rules in meta ───────────────────────────────────────────
+
+describe('buildRoster – army & detachment rules', () => {
+  // Artifact with a flagged army rule in the glossary and a detachment carrying rules.
+  const artifact = makeArtifact({
+    glossary: [
+      { id: 'g-army', name: 'The Shadow of Chaos', timing: '', effect: 'Army-wide effect.', source: 'Chaos Daemons', armyRule: true },
+      { id: 'g-other', name: 'Feel No Pain', timing: '', effect: 'Some keyword.', source: 'Chaos Daemons' },
+    ],
+    detachments: [
+      {
+        id: 'det-incursion',
+        name: 'Daemonic Incursion',
+        rules: [
+          { id: 'd-rule', name: 'Daemonic Pact', timing: '', effect: 'Detachment effect.', source: 'Daemonic Incursion' },
+        ],
+        stratagems: [
+          { name: 'Blood Tithe', timing: 'Any phase', cp: 1, effect: 'Do stuff.', source: 'Chaos Daemons' },
+        ],
+      },
+    ],
+  })
+
+  it('surfaces only glossary entries flagged as army rules', () => {
+    const parsed: ParsedArmy = {
+      factionKeyword: 'CHAOS DAEMONS',
+      detachment: 'Daemonic Incursion',
+      units: [{ name: 'Bloodthirster', wargear: [], enhancements: [] }],
+    }
+    const { meta } = buildRoster(parsed, artifact)
+    expect(meta.armyRules.map(r => r.name)).toEqual(['The Shadow of Chaos'])
+  })
+
+  it('exposes the matched detachment rules and sets detachmentMatched', () => {
+    const parsed: ParsedArmy = {
+      factionKeyword: 'CHAOS DAEMONS',
+      detachment: 'Daemonic Incursion',
+      units: [{ name: 'Bloodthirster', wargear: [], enhancements: [] }],
+    }
+    const { meta } = buildRoster(parsed, artifact)
+    expect(meta.detachmentMatched).toBe(true)
+    expect(meta.detachmentRules.map(r => r.name)).toEqual(['Daemonic Pact'])
+  })
+
+  it('keeps army rules but empties detachment rules when no detachment matches', () => {
+    const parsed: ParsedArmy = {
+      factionKeyword: 'CHAOS DAEMONS',
+      detachment: 'Unknown Detachment',
+      units: [{ name: 'Bloodthirster', wargear: [], enhancements: [] }],
+    }
+    const { meta } = buildRoster(parsed, artifact)
+    expect(meta.detachmentMatched).toBe(false)
+    expect(meta.detachmentRules).toEqual([])
+    // Army rules are independent of detachment matching.
+    expect(meta.armyRules.map(r => r.name)).toEqual(['The Shadow of Chaos'])
+  })
+})
+
 // ── Unit building ─────────────────────────────────────────────────────────────
 
 describe('buildRoster – unit matching', () => {

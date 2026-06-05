@@ -23,6 +23,9 @@ export function RosterScreen() {
         meta={stored.meta.detachment}
         points={stored.meta.points}
         stratagems={stratagems}
+        armyRules={stored.meta.armyRules}
+        detachmentRules={stored.meta.detachmentRules}
+        detachmentMatched={stored.meta.detachmentMatched}
       />
     )
   }

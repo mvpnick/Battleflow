@@ -103,7 +103,16 @@ export const StratSchema = RuleSchema.extend({
  * A shared ability/rule deduped into the faction-level glossary.
  * The `id` is a BSData UUID — the stable lookup key.
  */
-export const GlossaryRuleSchema = RuleSchema.extend({ id: z.string() })
+export const GlossaryRuleSchema = RuleSchema.extend({
+  id: z.string(),
+  /**
+   * `true` when this entry is one of the faction's army rule(s) (e.g. Oath of Moment,
+   * Reanimation Protocols, Synapse). BSData has no structured flag for this, so it is
+   * applied at ingest from a curated per-faction allowlist (`lib/ingest/armyRules.ts`).
+   * The entry stays in `glossary` for existing unit cross-refs — this only tags it.
+   */
+  armyRule: z.boolean().optional(),
+})
 
 /**
  * A unit prepared for the app. Superset of the UI `Unit` type.

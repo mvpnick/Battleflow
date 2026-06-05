@@ -11,6 +11,7 @@
     "ingest:wahapedia": "tsx lib/ingest/wahapediaCli.ts",
     "ingest:dedup": "tsx lib/ingest/dedupCli.ts",
     "ingest:summarise": "tsx lib/ingest/summariseCli.ts",
+    "ingest:armyrules": "tsx lib/ingest/armyRulesCli.ts",
     "test": "vitest run"
   },
   "dependencies": {

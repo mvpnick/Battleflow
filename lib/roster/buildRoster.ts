@@ -1,4 +1,4 @@
-import type { FactionArtifact, PreparedUnit } from '../dataModel'
+import type { DetachmentRule, FactionArtifact, GlossaryRule, PreparedUnit } from '../dataModel'
 import type { PhaseId, Roster, Rule, Stats, Strat, Unit, Weapon } from '../types'
 import type { ParsedArmy } from './parseGwText'
 import { norm } from './normalize'
@@ -146,6 +146,12 @@ export type RosterMeta = {
   detachment?: string
   points?: number
   stratagems?: Strat[]
+  /** The faction's army rule(s), flagged in the glossary at ingest (e.g. Oath of Moment). */
+  armyRules: GlossaryRule[]
+  /** Rules of the matched detachment; empty when no detachment matched. */
+  detachmentRules: DetachmentRule[]
+  /** Whether `parsed.detachment` resolved to a known detachment in the artifact. */
+  detachmentMatched: boolean
 }
 
 /**
@@ -169,6 +175,10 @@ export function buildRoster(
     factionName: artifact.factionName,
     detachment: parsed.detachment,
     points: parsed.totalPoints,
+    // Army rules are always-relevant reference, independent of detachment matching.
+    armyRules: artifact.glossary.filter(g => g.armyRule),
+    detachmentRules: [],
+    detachmentMatched: false,
   }
 
   // Strip parenthetical suffixes (e.g. "Daemonic Incursion (Warp Rifts)" → "Daemonic Incursion")
@@ -180,7 +190,11 @@ export function buildRoster(
     const dn = norm(d.name)
     return dn === detNorm || dn === detNormStripped
   })
-  if (matchedDetachment) meta.stratagems = matchedDetachment.stratagems
+  if (matchedDetachment) {
+    meta.stratagems = matchedDetachment.stratagems
+    meta.detachmentRules = matchedDetachment.rules
+    meta.detachmentMatched = true
+  }
 
   // Index the matched detachment's enhancements once per build, so each unit can
   // resolve its army-list enhancement bullets to the full Rule (for the drawer).

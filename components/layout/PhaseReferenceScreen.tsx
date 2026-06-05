@@ -1,13 +1,14 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { PhaseId, DrawerPayload, Roster, Strat, Unit } from '@/lib/types'
+import { PhaseId, DrawerPayload, Roster, Rule, Strat, Unit } from '@/lib/types'
 import { PHASES, SAMPLE_ROSTER, SAMPLE_STRATAGEMS } from '@/lib/sampleData'
 import { stratagemMatchesPhase, stratagemNamesPhase } from '@/lib/stratagems'
 import { TopBar } from './TopBar'
 import { PhaseNav } from './PhaseNav'
 import { PhaseSummary } from './PhaseSummary'
 import { PhaseStratagemSection } from './PhaseStratagemSection'
+import { RulesReferenceSection } from './RulesReferenceSection'
 import { UnitPhaseSection } from '@/components/roster/UnitPhaseSection'
 import { DetailDrawer } from '@/components/roster/DetailDrawer'
 import styles from './PhaseReferenceScreen.module.css'
@@ -41,6 +42,12 @@ interface Props {
   points?: number
   cp?: number
   cpMax?: number
+  /** The faction's army rule(s) — surfaced in the persistent Rules section. Undefined in demo mode. */
+  armyRules?: Rule[]
+  /** Rules of the matched detachment; empty when no detachment matched. */
+  detachmentRules?: Rule[]
+  /** Whether the roster's detachment resolved to a known one (drives the fallback note). */
+  detachmentMatched?: boolean
   onBack?: () => void
 }
 
@@ -53,6 +60,9 @@ export function PhaseReferenceScreen({
   points,
   cp,
   cpMax,
+  armyRules,
+  detachmentRules,
+  detachmentMatched,
   onBack,
 }: Props) {
   // Collapse the two modes (live roster vs. demo) into a single object so the rest
@@ -73,6 +83,7 @@ export function PhaseReferenceScreen({
 
   const [phase, setPhase] = useState<PhaseId>('command')
   const [openGroupKeys, setOpenGroupKeys] = useState<Set<string>>(new Set())
+  const [unitsCollapsed, setUnitsCollapsed] = useState(false)
   const [drawer, setDrawer] = useState<DrawerPayload>(null)
 
   // Phase rosters from `buildRoster` may contain units that exist for the
@@ -141,7 +152,25 @@ export function PhaseReferenceScreen({
 
         <PhaseStratagemSection stratagems={phaseStratagems} />
 
-        {groups.map(g => (
+        {/* Units header — collapsible for visual parity with the rules/stratagem sections,
+            but default expanded since the unit list is the primary content of the screen. */}
+        {groups.length > 0 && (
+          <button
+            type="button"
+            className={`bf-press ${styles.unitsHeader}`}
+            onClick={() => setUnitsCollapsed(c => !c)}
+          >
+            <span className={styles.unitsLabel}>
+              Units
+              <span className={styles.unitsCount}>{groups.length}</span>
+            </span>
+            <span className={`${styles.unitsChevron} ${unitsCollapsed ? styles.unitsChevronCollapsed : ''}`}>
+              ▲
+            </span>
+          </button>
+        )}
+
+        {!unitsCollapsed && groups.map(g => (
           <UnitPhaseSection
             key={g.key}
             unit={g.unit}
@@ -157,6 +186,17 @@ export function PhaseReferenceScreen({
           <div className={styles.empty}>
             No units for this phase.
           </div>
+        )}
+
+        {/* Army + detachment rules — persistent reference, pinned to the bottom of the
+            scroll area and identical under every phase tab. Only rendered for a live
+            roster built with rules data (undefined armyRules = demo/legacy → hidden). */}
+        {armyRules !== undefined && (
+          <RulesReferenceSection
+            armyRules={armyRules}
+            detachmentRules={detachmentRules ?? []}
+            detachmentMatched={detachmentMatched ?? false}
+          />
         )}
       </div>
 

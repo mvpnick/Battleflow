@@ -11,3 +11,53 @@
   color: var(--fg-mute);
   font-size: 13px;
 }
+
+/* Collapsible "Units" header — a standalone bar (the unit cards below are not boxed),
+   sharing the mono-label/count/chevron language of the stratagem & rules section headers. */
+.unitsHeader {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  width: calc(100% - 24px);
+  margin: 0 12px 8px;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 2px;
+  cursor: pointer;
+}
+
+.unitsLabel {
+  font-family: var(--f-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--signal);
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.unitsCount {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--fg-soft);
+  background: var(--surface-2);
+  border: 1px solid var(--border-faint);
+  border-radius: 10px;
+  padding: 0 6px;
+  line-height: 16px;
+  display: inline-block;
+}
+
+.unitsChevron {
+  font-size: 10px;
+  color: var(--fg-dim);
+  transition: transform 0.15s ease;
+}
+
+.unitsChevronCollapsed {
+  transform: rotate(180deg);
+}

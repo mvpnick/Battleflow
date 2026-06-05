@@ -44,6 +44,17 @@ into small, self-contained per-faction JSON artifacts committed under `public/da
   `public/data/shared/<id>.json` set, removed from the per-faction artifacts, and referenced via
   `FactionArtifact.sharedDetachments`. The runtime loader merges them back. Faction-specific and
   Aeldari-library detachments (which differ in stratagem coverage) stay inline.
+- **Army-rule flagging (offline)** — `lib/ingest/armyRules.ts`. BSData models a faction's
+  army rule (Oath of Moment, Reanimation Protocols, Synapse, …) as an ordinary glossary
+  ability with no structured flag. `flagArmyRules` tags the relevant glossary entries with
+  `armyRule: true` from a curated per-faction name allowlist (`ARMY_RULES`). Curated rather than
+  prose-detected because "If your Army Faction is…" misses Custodes / AdMech and over-catches
+  imported allied rules, and because the per-faction map disambiguates the shared SM codex (all 12
+  chapters carry both *Oath of Moment* and *Templar Vows*; only Black Templars surfaces the
+  latter). Runs inside `toFactionArtifact` (so every ingest is correct) and is also exposed as a
+  re-runnable back-fill CLI (`armyRulesCli.ts` / `npm run ingest:armyrules`). `buildRoster`
+  surfaces the flagged entries via `RosterMeta.armyRules`, rendered alongside the matched
+  detachment's rules in `RulesReferenceSection` (a persistent, non-phase-filtered section).
 - **Storage** — committed JSON in `public/data/factions/<id>.json`, shared sets in
   `public/data/shared/<id>.json`, indexed by `public/data/manifest.json`, served as static CDN
   assets. Artifacts are versioned by content hash; the client requests them with `?v=<sha256>` so
@@ -71,8 +82,16 @@ into small, self-contained per-faction JSON artifacts committed under `public/da
    `docs/summary-overrides.json` so re-runs are instant for unchanged effects. Requires
    `ANTHROPIC_API_KEY`. **Must be re-run after every Wahapedia ingest**, because step 2 clears any
    summary fields that were set by a previous summarise run.
-5. Review `git diff public/data/` — it's a readable, reviewable data diff.
-6. Commit and deploy. The pinned tag + commit are recorded in `manifest.json`.
+5. `npm run ingest:armyrules -- [--factions <slug,slug|all>] [--dry-run]` to tag each
+   faction's army rule(s) in the glossary (`glossary[].armyRule`) from the curated allowlist
+   in `lib/ingest/armyRules.ts`. **Optional / orthogonal:** the same `flagArmyRules` logic
+   already runs inside BSData ingest (step 1), so a fresh ingest is correct without this; the
+   CLI exists only to back-fill *already-committed* artifacts without a full re-ingest. It is
+   idempotent and touches nothing but `armyRule`, so unlike summaries it is **not** clobbered by
+   Wahapedia (step 2) / dedup (step 3) and never needs re-running after them. Warns loudly if an
+   allowlisted name fails to resolve (glossary rename / typo).
+6. Review `git diff public/data/` — it's a readable, reviewable data diff.
+7. Commit and deploy. The pinned tag + commit are recorded in `manifest.json`.
 
 ## Known limitations / deferred
 - **Phase inference is NOT done yet.** BSData has no phase field; `PreparedUnit.phases` is the

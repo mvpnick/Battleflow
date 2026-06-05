@@ -16,6 +16,7 @@ export {
 } from '../schemas'
 
 import { textOf, type Catalogue, type Profile } from '../parsers/bsdata'
+import { flagArmyRules } from './armyRules'
 import type { ResolvedUnit } from './resolve'
 import {
   DATA_SCHEMA_VERSION,
@@ -162,6 +163,10 @@ export function toFactionArtifact(
     units,
     glossary: [...glossaryMap.values()],
   }
+
+  // Tag the faction's army rule(s) in the glossary from the curated allowlist, so
+  // future ingests carry the flag automatically (see lib/ingest/armyRules.ts).
+  flagArmyRules(artifact)
 
   // Parse validates the artifact shape and strips any unknown fields.
   return FactionArtifactSchema.parse(artifact) as FactionArtifact
