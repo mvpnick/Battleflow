@@ -61,6 +61,14 @@ function isAbilityProfile(p: Profile): boolean {
   return !STAT_TYPES.has(p.typeName) && !WEAPON_TYPES.has(p.typeName)
 }
 
+// Weapon keyword descriptions (e.g. "Precise") carry "this weapon" in their description
+// characteristic. They are weapon-scoped rules, not unit abilities, and must be dropped —
+// they would otherwise leak onto every unit that links to a shared weapon-keywords infoGroup.
+function isWeaponScopedAbility(p: Profile): boolean {
+  const desc = (p.characteristics?.characteristic ?? []).find((c) => c.name === 'Description')
+  return (desc?.['#text'] ?? '').toLowerCase().includes('this weapon')
+}
+
 export interface ResolvedUnit {
   bsId: string
   name: string
@@ -140,7 +148,7 @@ function collectUnit(root: BsNode, index: BsIndex): ResolvedUnit {
       if (!unit.statProfile) unit.statProfile = p
     } else if (WEAPON_TYPES.has(p.typeName)) {
       if (!weaponIds.has(p.id)) { weaponIds.add(p.id); unit.weapons.push(p) }
-    } else if (isAbilityProfile(p)) {
+    } else if (isAbilityProfile(p) && !isWeaponScopedAbility(p)) {
       if (!abilityIds.has(p.id)) { abilityIds.add(p.id); unit.abilities.push(p) }
     }
   }
