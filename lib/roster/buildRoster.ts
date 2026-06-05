@@ -52,7 +52,44 @@ function dedup(strs: string[]): string[] {
 
 function matchUnit(name: string, units: PreparedUnit[]): PreparedUnit | undefined {
   const key = norm(name)
-  return units.find(u => norm(u.name) === key)
+
+  const exact = units.find(u => norm(u.name) === key)
+  if (exact) return exact
+
+  // Faction prefix omitted: "Sorcerer" exported, "Thousand Sons Sorcerer" in artifact.
+  const suffixed = units.filter(u => norm(u.name).endsWith(` ${key}`))
+  if (suffixed.length === 1) return suffixed[0]
+
+  // Multiple suffix candidates (e.g. "Thousand Sons Sorcerer" AND "Exalted Sorcerer" both
+  // end with " sorcerer"). Pick the candidate whose non-suffix prefix is used most often
+  // across the artifact — that's the faction prefix ("Thousand Sons" × 16) rather than a
+  // unit-specific modifier ("Exalted" × 2). Only return if there's a strict winner.
+  if (suffixed.length > 1) {
+    const normedUnits = units.map(u => norm(u.name))
+    const counts = suffixed.map(u => {
+      const normName = norm(u.name)
+      const prefix = normName.slice(0, normName.length - key.length - 1)
+      return normedUnits.filter(n => n.startsWith(`${prefix} `)).length
+    })
+    const maxCount = Math.max(...counts)
+    const winners = suffixed.filter((_, i) => counts[i] === maxCount)
+    if (winners.length === 1) return winners[0]
+  }
+
+  // Different faction prefix: "Chaos Rhino" exported, "Thousand Sons Rhino" in artifact.
+  // Progressively drop leading words from the parsed name and look for a unique tail match.
+  // Single-word keys skip this loop entirely and fall through to undefined.
+  const words = key.split(' ')
+  for (let drop = 1; drop < words.length; drop++) {
+    const tail = words.slice(drop).join(' ')
+    const tailMatches = units.filter(u => {
+      const un = norm(u.name)
+      return un === tail || un.endsWith(` ${tail}`)
+    })
+    if (tailMatches.length === 1) return tailMatches[0]
+  }
+
+  return undefined
 }
 
 /** Keep only weapons whose normalized name is in the parsed wargear set.

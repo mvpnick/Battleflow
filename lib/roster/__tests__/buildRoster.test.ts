@@ -104,6 +104,133 @@ describe('buildRoster – unit matching', () => {
     expect(roster.fight?.map(u => u.name)).toContain('Bloodthirster')
   })
 
+  it('matches a faction-prefixed unit when the export omits the prefix', () => {
+    // BattleBase exports "Sorcerer"; BSData stores "Thousand Sons Sorcerer"
+    const artifact = makeArtifact({
+      units: [
+        {
+          id: 'unit-sorcerer',
+          bsId: 'bs-sorc',
+          name: 'Thousand Sons Sorcerer',
+          role: 'character',
+          models: 1,
+          stats: { M: '6"', T: '4', SV: '3+', W: '4', LD: '6+', OC: '1' },
+          hot: [],
+          weapons: [
+            { name: 'Force weapon', kind: 'melee', stats: { A: '3', WS: '3+', S: '6', AP: '-1', D: 'D3' }, tags: [], mods: [] },
+          ],
+          abilities: [],
+          stratagems: [],
+          reminders: [],
+          tags: [],
+          keywords: ['Thousand Sons'],
+          ruleRefs: [],
+        },
+      ],
+    })
+    const parsed: ParsedArmy = {
+      factionKeyword: 'Thousand Sons',
+      detachment: 'Grand Coven',
+      units: [{ name: 'Sorcerer', wargear: [], enhancements: [] }],
+    }
+    const { roster } = buildRoster(parsed, artifact)
+    const allNames = Object.values(roster).flat().map(u => u.name)
+    expect(allNames).toContain('Thousand Sons Sorcerer')
+  })
+
+  it('matches a unit when the export uses a different faction prefix', () => {
+    // BattleBase exports "Chaos Rhino"; BSData stores "Thousand Sons Rhino"
+    const artifact = makeArtifact({
+      units: [
+        {
+          id: 'unit-rhino',
+          bsId: 'bs-rhino',
+          name: 'Thousand Sons Rhino',
+          role: 'dedicated transport',
+          models: 1,
+          stats: { M: '12"', T: '9', SV: '3+', W: '10', LD: '6+', OC: '2' },
+          hot: [],
+          weapons: [
+            { name: 'Combi-bolter', kind: 'ranged', stats: { A: '2', BS: '3+', S: '4', AP: '0', D: '1' }, tags: [], mods: [] },
+          ],
+          abilities: [],
+          stratagems: [],
+          reminders: [],
+          tags: [],
+          keywords: ['Thousand Sons'],
+          ruleRefs: [],
+        },
+      ],
+    })
+    const parsed: ParsedArmy = {
+      factionKeyword: 'Thousand Sons',
+      detachment: 'Grand Coven',
+      units: [{ name: 'Chaos Rhino', wargear: [], enhancements: [] }],
+    }
+    const { roster } = buildRoster(parsed, artifact)
+    const allNames = Object.values(roster).flat().map(u => u.name)
+    expect(allNames).toContain('Thousand Sons Rhino')
+  })
+
+  it('matches the faction-prefixed unit when a same-suffix unit also exists', () => {
+    // "Sorcerer" should match "Thousand Sons Sorcerer", not "Exalted Sorcerer",
+    // even though both end with " sorcerer".  The tie-break is prefix frequency:
+    // "Thousand Sons" appears as a prefix for many units; "Exalted" appears for few.
+    const artifact = makeArtifact({
+      units: [
+        {
+          id: 'unit-sorc',
+          bsId: 'bs-sorc',
+          name: 'Thousand Sons Sorcerer',
+          role: 'character',
+          models: 1,
+          stats: { M: '6"', T: '4', SV: '3+', W: '4', LD: '6+', OC: '1' },
+          hot: [],
+          weapons: [
+            { name: 'Force weapon', kind: 'melee', stats: { A: '3', WS: '3+', S: '6', AP: '-1', D: 'D3' }, tags: [], mods: [] },
+          ],
+          abilities: [], stratagems: [], reminders: [], tags: [], keywords: [], ruleRefs: [],
+        },
+        {
+          id: 'unit-exalted',
+          bsId: 'bs-exalted',
+          name: 'Exalted Sorcerer',
+          role: 'character',
+          models: 1,
+          stats: { M: '6"', T: '4', SV: '3+', W: '5', LD: '6+', OC: '1' },
+          hot: [],
+          weapons: [
+            { name: 'Force weapon', kind: 'melee', stats: { A: '4', WS: '3+', S: '6', AP: '-1', D: 'D3' }, tags: [], mods: [] },
+          ],
+          abilities: [], stratagems: [], reminders: [], tags: [], keywords: [], ruleRefs: [],
+        },
+        // Extra "Thousand Sons" prefixed units to make the prefix frequency unambiguous.
+        {
+          id: 'unit-rhino',
+          bsId: 'bs-rhino',
+          name: 'Thousand Sons Rhino',
+          role: 'dedicated transport',
+          models: 1,
+          stats: { M: '12"', T: '9', SV: '3+', W: '10', LD: '6+', OC: '2' },
+          hot: [],
+          weapons: [
+            { name: 'Combi-bolter', kind: 'ranged', stats: { A: '2', BS: '3+', S: '4', AP: '0', D: '1' }, tags: [], mods: [] },
+          ],
+          abilities: [], stratagems: [], reminders: [], tags: [], keywords: [], ruleRefs: [],
+        },
+      ],
+    })
+    const parsed: ParsedArmy = {
+      factionKeyword: 'Thousand Sons',
+      detachment: 'Grand Coven',
+      units: [{ name: 'Sorcerer', wargear: [], enhancements: [] }],
+    }
+    const { roster } = buildRoster(parsed, artifact)
+    const allNames = [...new Set(Object.values(roster).flat().map(u => u.name))]
+    expect(allNames).toContain('Thousand Sons Sorcerer')
+    expect(allNames).not.toContain('Exalted Sorcerer')
+  })
+
   it('silently drops unrecognized unit names', () => {
     const parsed: ParsedArmy = {
       factionKeyword: 'CHAOS DAEMONS',
