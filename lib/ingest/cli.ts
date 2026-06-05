@@ -5,7 +5,7 @@ import {
   resolveRef,
 } from './fetch'
 import { parseCatalogue, parseGameSystem } from '../parsers/bsdata'
-import { buildIndex, enumerateUnits } from './resolve'
+import { buildIndex, collectCrusadeIds, enumerateUnits } from './resolve'
 import { extractDetachments, selectOwnedCatalogues } from './detachments'
 import { toFactionArtifact } from './normalize'
 import { prepareArtifact, writeArtifact, writeManifest, type EmitResult } from './emit'
@@ -117,6 +117,7 @@ async function main() {
 
   const { gst: gstFile, catalogues } = await listDataFiles(sha)
   const gst = parseGameSystem(await fetchRaw(sha, gstFile))
+  const crusadeIds = collectCrusadeIds(gst)
 
   const factionFiles = catalogues.filter(isFactionFile).filter((f) => {
     if (args.factions === 'all') return true
@@ -139,7 +140,7 @@ async function main() {
     const chain = await loadChain(sha, file, findFileById)
     const faction = chain[0].catalogue
     const allCats = chain.map((c) => c.catalogue)
-    const index = buildIndex([gst, ...allCats])
+    const index = buildIndex([gst, ...allCats], crusadeIds)
     const enumerable = chain.filter((c) => c.enumerateRoots).map((c) => c.catalogue)
     const units = enumerateUnits(enumerable, index)
 

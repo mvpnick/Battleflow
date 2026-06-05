@@ -14,17 +14,46 @@ type BsNode = Record<string, any>
 export type BsIndex = Map<string, BsNode>
 
 /**
+ * Collect all node IDs belonging to the GST's sharedSelectionEntryGroups subtree.
+ * Every node in that subtree is Crusade / narrative-play content (Weapon Modifications,
+ * Battle Traits, Battle Scars, Crusade Relics, campaign honours, …) that has no place
+ * in a competitive-play reference app. Passing the returned set to buildIndex as a
+ * skip-list ensures those nodes are never resolvable during unit traversal — links
+ * into the Crusade pools silently return undefined and are ignored.
+ */
+export function collectCrusadeIds(gst: BsNode): Set<string> {
+  const ids = new Set<string>()
+  const groups: BsNode[] = [].concat(gst.sharedSelectionEntryGroups?.selectionEntryGroup ?? [])
+  const stack: BsNode[] = [...groups]
+  while (stack.length) {
+    const node = stack.pop()!
+    if (!node || typeof node !== 'object') continue
+    if (typeof node.id === 'string') ids.add(node.id)
+    for (const [key, val] of Object.entries(node)) {
+      if (key === 'id' || key === '#text') continue
+      if (Array.isArray(val)) {
+        for (const c of val) if (c && typeof c === 'object') stack.push(c)
+      } else if (val && typeof val === 'object') {
+        stack.push(val)
+      }
+    }
+  }
+  return ids
+}
+
+/**
  * Deep-walk parsed trees, indexing every node that carries an `id`.
  * Ids are assumed globally unique across the catalogue chain (they are BSData UUIDs);
  * if the same id appears twice, the last node walked wins.
+ * Pass skipIds (from collectCrusadeIds) to exclude Crusade/narrative nodes entirely.
  */
-export function buildIndex(roots: BsNode[]): BsIndex {
+export function buildIndex(roots: BsNode[], skipIds?: Set<string>): BsIndex {
   const index: BsIndex = new Map()
   const stack: BsNode[] = [...roots]
   while (stack.length) {
     const node = stack.pop()!
     if (!node || typeof node !== 'object') continue
-    if (typeof node.id === 'string') index.set(node.id, node)
+    if (typeof node.id === 'string' && !skipIds?.has(node.id)) index.set(node.id, node)
     for (const [key, val] of Object.entries(node)) {
       if (key === 'id' || key === '#text') continue
       if (Array.isArray(val)) {
@@ -61,12 +90,17 @@ function isAbilityProfile(p: Profile): boolean {
   return !STAT_TYPES.has(p.typeName) && !WEAPON_TYPES.has(p.typeName)
 }
 
-// Weapon keyword descriptions (e.g. "Precise") carry "this weapon" in their description
-// characteristic. They are weapon-scoped rules, not unit abilities, and must be dropped —
-// they would otherwise leak onto every unit that links to a shared weapon-keywords infoGroup.
+// Weapon keyword descriptions carry "this weapon" or "weapons with [KEYWORD]" in their text.
+// They are weapon-scoped rules, not unit abilities, and must be dropped — they would otherwise
+// leak onto every unit that links to a shared weapon-keywords infoGroup.
+function isWeaponKeywordText(text: string): boolean {
+  const t = text.toLowerCase()
+  return t.includes('this weapon') || t.startsWith('weapons with [') || t.startsWith('weapons with **[')
+}
+
 function isWeaponScopedAbility(p: Profile): boolean {
   const desc = (p.characteristics?.characteristic ?? []).find((c) => c.name === 'Description')
-  return (desc?.['#text'] ?? '').toLowerCase().includes('this weapon')
+  return isWeaponKeywordText(desc?.['#text'] ?? '')
 }
 
 export interface ResolvedUnit {
@@ -184,9 +218,11 @@ function collectUnit(root: BsNode, index: BsIndex): ResolvedUnit {
       if (l.type === 'rule') {
         addRule(target as RuleNode)
         if (!hasWeaponProfiles(node) && !unitRuleIds.has(target.id)) {
+          const effect = textOf((target as RuleNode).description)
+          if (isWeaponKeywordText(effect)) continue
           unitRuleIds.add(target.id)
           const name = applyNameModifiers(l.name ?? (target as RuleNode).name, l.modifiers?.modifier ?? [])
-          unit.unitRules.push({ name, effect: textOf((target as RuleNode).description) })
+          unit.unitRules.push({ name, effect })
         }
       }
       else if (l.type === 'profile') addProfile(target as Profile)
