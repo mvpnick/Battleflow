@@ -155,19 +155,21 @@ export function PhaseReferenceScreen({
         {/* Units header — collapsible for visual parity with the rules/stratagem sections,
             but default expanded since the unit list is the primary content of the screen. */}
         {groups.length > 0 && (
-          <button
-            type="button"
-            className={`bf-press ${styles.unitsHeader}`}
-            onClick={() => setUnitsCollapsed(c => !c)}
-          >
-            <span className={styles.unitsLabel}>
-              Units
-              <span className={styles.unitsCount}>{groups.length}</span>
-            </span>
-            <span className={`${styles.unitsChevron} ${unitsCollapsed ? styles.unitsChevronCollapsed : ''}`}>
-              ▲
-            </span>
-          </button>
+          <div className={styles.unitsSection}>
+            <button
+              type="button"
+              className={`bf-press ${styles.unitsHeader}`}
+              onClick={() => setUnitsCollapsed(c => !c)}
+            >
+              <span className={styles.unitsLabel}>
+                Units
+                <span className={styles.unitsCount}>{groups.length}</span>
+              </span>
+              <span className={`${styles.unitsChevron} ${unitsCollapsed ? styles.unitsChevronCollapsed : ''}`}>
+                ▲
+              </span>
+            </button>
+          </div>
         )}
 
         {!unitsCollapsed && groups.map(g => (

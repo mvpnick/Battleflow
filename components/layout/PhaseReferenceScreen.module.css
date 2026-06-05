@@ -12,19 +12,26 @@
   font-size: 13px;
 }
 
-/* Collapsible "Units" header — a standalone bar (the unit cards below are not boxed),
-   sharing the mono-label/count/chevron language of the stratagem & rules section headers. */
+/* Collapsible "Units" header — a card matching the stratagem & rules section headers. */
+.unitsSection {
+  margin: 0 12px 10px;
+  border: 1px solid var(--border-faint);
+  border-radius: var(--r-4);
+  overflow: hidden;
+  background: var(--surface-1);
+  box-shadow: var(--elev-1);
+}
+
 .unitsHeader {
   appearance: none;
   border: 0;
   background: transparent;
-  width: calc(100% - 24px);
-  margin: 0 12px 8px;
+  width: 100%;
   text-align: left;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 6px 2px;
+  padding: 10px 14px;
   cursor: pointer;
 }
 
