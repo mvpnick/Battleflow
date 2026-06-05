@@ -40,13 +40,13 @@ import { PHASE_IDS } from '../schemas'
 const ROUND_DET = '(?:the |a |an |any |each |every |its |next |the next )?'
 const ROUND_START_RE = new RegExp(`\\bstart of ${ROUND_DET}(?:battle )?round\\b`, 'i')
 const ROUND_END_RE   = new RegExp(`\\bend of ${ROUND_DET}(?:battle )?round\\b`, 'i')
-// "first battle round" is a pre-game scout move: surfaces on both command (deployment step)
-// and movement (it is physically a Normal move).
+// "first battle round" is a pre-game scout move: surfaces on command only (it happens
+// before the first turn begins, not during the Movement phase).
 const FIRST_BATTLE_ROUND_RE = /\bfirst battle round\b/i
 
 const PHASE_PATTERNS: Record<PhaseId, RegExp[]> = {
   command:     [/\bcommand\b/i, ROUND_START_RE, FIRST_BATTLE_ROUND_RE],
-  movement:    [/\bmovement\b/i, /\badvances\b/i, FIRST_BATTLE_ROUND_RE],
+  movement:    [/\bmovement\b/i, /\badvances\b/i],
   shooting:    [/\bshooting\b/i, /\bshoots\b/i],
   charge:      [/\bcharge\b/i, /\bdeclares a charge\b/i],
   fight:       [/\bfight\b/i, /\bfights\b/i],
