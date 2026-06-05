@@ -12,8 +12,7 @@ No hunting through PDFs or flipping pages mid-turn.
 - **Roster at a glance** — Units, weapons, abilities, and stratagems for that phase in one dense, readable layout.
 - **Stratagems, detachment rules, and army rules** — surfaced in the same view alongside your units.
 - **Quick details** — Tap any row to open a bottom sheet with full stats, timing, conditions, and modifiers without leaving the phase view.
-- **Built for the table** — Dark UI, large tap targets, and sticky phase controls so you can use it one-handed between moves.
-- **37 factions** — Full game data from BSData + Wahapedia, committed as static JSON for fast loading.
+- **37 factions** — Full game data from BSData 
 
 ## What Battleflow is not
 
@@ -21,7 +20,7 @@ Battleflow is a **reference sheet**, not a game engine. It does not track model 
 
 ## How to use it
 
-1. Export your army list from the GW app, New Recruit, or any tool that produces the standard `+++ Army [FACTION] +++` format.
+1. Export your army list from the GW app, New Recruit, or any tool that produces the standard GW format.
 2. Open Battleflow and paste the list text into the import box.
 3. Battleflow detects your faction automatically, or lets you pick from the full list.
 4. Select the **active phase** (CMD → MOV → SHO → CHG → FGT → BSK).
