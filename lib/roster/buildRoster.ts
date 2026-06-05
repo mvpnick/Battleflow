@@ -218,7 +218,10 @@ export function buildRoster(
     const phaseUnit = (phase: PhaseId, weapons: Weapon[]): Unit => ({
       ...base,
       stats: pickStats(base.stats, phase),
-      abilities: base.abilities.filter((_, i) => abilityPhases[i].has(phase)),
+      abilities: base.abilities.filter((a, i) =>
+        abilityPhases[i].has(phase) &&
+        (phase === 'command' || a.name.toLowerCase() !== 'leader')
+      ),
       weapons,
       full,
     })

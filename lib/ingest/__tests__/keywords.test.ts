@@ -74,7 +74,7 @@ describe('deriveFactionKeywords', () => {
     const chain = [chainEntry(nativeCat), chainEntry(allyCat)]
     const index = buildIndex([nativeCat, allyCat])
     const allUnits = [...nativeUnits, ...allyUnits]
-      .map(e => ({ bsId: e.id, name: e.name, keywords: (e.categoryLinks?.categoryLink ?? []).map(c => c.name), weapons: [], abilities: [], rules: [] }))
+      .map(e => ({ bsId: e.id, name: e.name, keywords: (e.categoryLinks?.categoryLink ?? []).map(c => c.name), weapons: [], abilities: [], rules: [], unitRules: [] }))
 
     const result = deriveFactionKeywords(chain, allUnits, 'necrons', index)
 
@@ -100,7 +100,7 @@ describe('deriveFactionKeywords', () => {
     const chain = [chainEntry(primaryCat), chainEntry(libraryCat)]
     const index = buildIndex([primaryCat, libraryCat])
     const allUnits = [...primaryUnits, ...libraryUnits]
-      .map(e => ({ bsId: e.id, name: e.name, keywords: (e.categoryLinks?.categoryLink ?? []).map(c => c.name), weapons: [], abilities: [], rules: [] }))
+      .map(e => ({ bsId: e.id, name: e.name, keywords: (e.categoryLinks?.categoryLink ?? []).map(c => c.name), weapons: [], abilities: [], rules: [], unitRules: [] }))
 
     const result = deriveFactionKeywords(chain, allUnits, 'chaos-daemons', index)
 
@@ -124,7 +124,7 @@ describe('deriveFactionKeywords', () => {
     const allUnits = nativeUnits.map(e => ({
       bsId: e.id, name: e.name,
       keywords: (e.categoryLinks?.categoryLink ?? []).map(c => c.name),
-      weapons: [], abilities: [], rules: [],
+      weapons: [], abilities: [], rules: [], unitRules: [],
     }))
 
     const result = deriveFactionKeywords(chain, allUnits, 'blood-angels', index)
@@ -154,7 +154,7 @@ describe('deriveFactionKeywords', () => {
     const allUnits = [...nativeUnits, ...allyUnits].map(e => ({
       bsId: e.id, name: e.name,
       keywords: (e.categoryLinks?.categoryLink ?? []).map(c => c.name),
-      weapons: [], abilities: [], rules: [],
+      weapons: [], abilities: [], rules: [], unitRules: [],
     }))
 
     const result = deriveFactionKeywords(chain, allUnits, 'chaos-space-marines', index)

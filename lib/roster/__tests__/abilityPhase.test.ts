@@ -131,6 +131,18 @@ describe('abilityPhasesFor – round-boundary phrasing', () => {
   })
 })
 
+describe('abilityPhasesFor – first battle round (Scouts)', () => {
+  it('"first battle round" → command + movement only', () => {
+    const phases = abilityPhasesFor({
+      effect:
+        'At the start of the first battle round, before the first turn begins, it can make a Normal move of up to 6".',
+    })
+    expect(phases.has('command')).toBe(true)
+    expect(phases.has('movement')).toBe(true)
+    expect(phases.size).toBe(2)
+  })
+})
+
 describe('abilityPhasesFor – timing field is also scanned', () => {
   it('matches a phase named only in the timing string', () => {
     const phases = abilityPhasesFor({

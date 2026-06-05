@@ -1,4 +1,4 @@
-import type { Catalogue, Profile, RuleNode } from '../parsers/bsdata'
+import { textOf, type Catalogue, type Profile, type RuleNode } from '../parsers/bsdata'
 
 /**
  * Resolves BSData UUID cross-references (infoLink / entryLink / catalogueLink) so
@@ -76,8 +76,23 @@ export interface ResolvedUnit {
   weapons: Profile[]
   abilities: Profile[]
   rules: RuleNode[]
+  /** Non-weapon-scoped rule infoLinks with their modifier-resolved display names. */
+  unitRules: Array<{ name: string; effect: string }>
   keywords: string[]
   points?: string
+}
+
+function hasWeaponProfiles(node: BsNode): boolean {
+  return (node.profiles?.profile ?? []).some((p: Profile) => WEAPON_TYPES.has(p.typeName))
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function applyNameModifiers(base: string, modifiers: any[]): string {
+  let name = base
+  for (const mod of modifiers) {
+    if (mod.field === 'name' && mod.type === 'append') name += ' ' + mod.value
+  }
+  return name
 }
 
 function hasUnitProfile(node: BsNode, index: BsIndex, seen = new Set<string>(), depth = 0): boolean {
@@ -129,11 +144,13 @@ function collectUnit(root: BsNode, index: BsIndex): ResolvedUnit {
     weapons: [],
     abilities: [],
     rules: [],
+    unitRules: [],
     keywords: [],
   }
   const weaponIds = new Set<string>()
   const abilityIds = new Set<string>()
   const ruleIds = new Set<string>()
+  const unitRuleIds = new Set<string>()
   const visited = new Set<string>()
 
   // Keywords + points come from the root datasheet node only (canonical).
@@ -164,7 +181,14 @@ function collectUnit(root: BsNode, index: BsIndex): ResolvedUnit {
     for (const l of node.infoLinks?.infoLink ?? []) {
       const target = index.get(l.targetId)
       if (!target) continue
-      if (l.type === 'rule') addRule(target as RuleNode)
+      if (l.type === 'rule') {
+        addRule(target as RuleNode)
+        if (!hasWeaponProfiles(node) && !unitRuleIds.has(target.id)) {
+          unitRuleIds.add(target.id)
+          const name = applyNameModifiers(l.name ?? (target as RuleNode).name, l.modifiers?.modifier ?? [])
+          unit.unitRules.push({ name, effect: textOf((target as RuleNode).description) })
+        }
+      }
       else if (l.type === 'profile') addProfile(target as Profile)
       else if (l.type === 'infoGroup') {
         if (visited.has(l.targetId)) continue

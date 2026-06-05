@@ -64,6 +64,7 @@ export interface InfoLink {
   type: string
   targetId: string
   hidden?: string
+  modifiers?: { modifier?: Modifier[] }
 }
 
 export interface CategoryLink {

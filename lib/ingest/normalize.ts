@@ -134,7 +134,13 @@ export function toFactionArtifact(
       tags: u.keywords,
       hot: [],
       weapons: dedupeBy(u.weapons.map(weaponFromProfile), (w) => `${w.kind}|${w.name}|${JSON.stringify(w.stats)}`),
-      abilities: dedupeBy(u.abilities.map((p) => abilityFromProfile(p, factionName)), (a) => `${a.name}|${a.effect}`),
+      abilities: dedupeBy(
+        [
+          ...u.abilities.map((p) => abilityFromProfile(p, factionName)),
+          ...u.unitRules.map(({ name, effect }) => ({ name, timing: '', effect, source: factionName })),
+        ],
+        (a) => `${a.name}|${a.effect}`,
+      ),
       stratagems: [],
       reminders: [],
       keywords: u.keywords,
