@@ -222,6 +222,12 @@ function mergeStratagems(
       true, // synthesis only if an enhancement group of the same name exists
     )
     if (!result) continue
+    const erasedSummaries = result.det.stratagems.filter((s) => s.summary).length
+    if (erasedSummaries > 0) {
+      console.warn(
+        `  ⚠ Erasing ${erasedSummaries} summar${erasedSummaries === 1 ? 'y' : 'ies'} from "${result.det.name}" — run ingest:summarise afterwards`,
+      )
+    }
     result.det.stratagems = group.stratagems
     if (result.synthesized) synthesizedDetachments.add(result.det)
     else matchedDetachments.add(result.det)
