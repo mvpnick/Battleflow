@@ -81,11 +81,11 @@ export function PhaseReferenceScreen({
   // abilities AND zero phase-relevant weapons has nothing to surface as an
   // option — hide it from the list entirely. Reinforces the "this list is
   // your menu of actions for this phase" mental model.
-  const phaseUnits = resolved.roster[phase] ?? []
+  const phaseUnits = useMemo(
+    () => resolved.roster[phase] ?? [],
+    [resolved.roster, phase],
+  )
   const units = phaseUnits.filter(u => u.abilities.length > 0 || u.weapons.length > 0)
-  // phaseUnits is a stable array reference (same object from the roster prop)
-  // so this memo only recomputes when the phase or roster changes, not on
-  // every drawer/expand-collapse re-render.
   const groups = useMemo(
     () => groupIdenticalUnits(phaseUnits.filter(u => u.abilities.length > 0 || u.weapons.length > 0)),
     [phaseUnits],

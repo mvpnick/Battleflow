@@ -4,7 +4,7 @@ import {
   listDataFiles,
   resolveRef,
 } from './fetch'
-import { parseCatalogue, parseGameSystem, type Catalogue } from '../parsers/bsdata'
+import { parseCatalogue, parseGameSystem } from '../parsers/bsdata'
 import { buildIndex, enumerateUnits } from './resolve'
 import { extractDetachments, selectOwnedCatalogues } from './detachments'
 import { toFactionArtifact } from './normalize'

@@ -41,7 +41,12 @@ let snapshotRaw: string | null = null
 let snapshotValue: StoredRoster | null = null
 
 export function getRosterSnapshot(): StoredRoster | null {
-  const raw = localStorage.getItem(KEY)
+  let raw: string | null
+  try {
+    raw = localStorage.getItem(KEY)
+  } catch {
+    return snapshotValue
+  }
   if (raw !== snapshotRaw) {
     snapshotRaw = raw
     snapshotValue = loadRoster()
