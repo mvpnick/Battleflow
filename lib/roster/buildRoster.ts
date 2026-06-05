@@ -107,6 +107,40 @@ function filterWeapons(weapons: Weapon[], wargearSet: Set<string>): Weapon[] {
   })
 }
 
+/**
+ * Scans every detachment's rules for the BSData convention of granting abilities
+ * to all units in your army. BSData uses several phrasings for this — all are
+ * semantically equivalent grants:
+ *   "units from your army have the following ability"  (Thousand Sons, Emperor's Children)
+ *   "units from your army gain the following ability"  (Adeptus Custodes)
+ *   "units in your army have the following ability"    (World Eaters)
+ *   "models from your army have the following ability" (Aeldari)
+ *
+ * Returns a map of normalised ability name → the detachment name that grants it.
+ * Used at roster-build time to filter abilities that belong to a different detachment.
+ */
+function buildDetachmentAbilityMap(
+  detachments: FactionArtifact['detachments'],
+): Map<string, string> {
+  const map = new Map<string, string>()
+  // Matches any of the BSData grant phrasings before "the following abilit(y|ies)"
+  const grantTrigger = /(?:units?|models?)\s+(?:from|in)\s+your\s+army\s+(?:have|gain)\s+the\s+following\s+abilit/i
+  const abilityName = /\*\*([^*]+)\*\*:/g
+
+  for (const det of detachments) {
+    for (const rule of det.rules) {
+      if (!grantTrigger.test(rule.effect)) continue
+      let match: RegExpExecArray | null
+      abilityName.lastIndex = 0
+      while ((match = abilityName.exec(rule.effect)) !== null) {
+        map.set(norm(match[1]), det.name)
+      }
+    }
+  }
+
+  return map
+}
+
 export type RosterMeta = {
   factionName: string
   detachment?: string
@@ -155,6 +189,12 @@ export function buildRoster(
     enhancementsByKey.set(norm(enh.name), enh)
   }
 
+  // Build a map of abilities that are granted by a specific detachment's rules.
+  // When a detachment is matched, abilities belonging to OTHER detachments are
+  // filtered out — they don't apply to this army's active detachment.
+  // If no detachment is matched (unknown/new detachment), filtering is skipped.
+  const detachmentAbilityMap = buildDetachmentAbilityMap(artifact.detachments)
+
   for (const parsedUnit of parsed.units) {
     const matched = matchUnit(parsedUnit.name, artifact.units)
     if (!matched) continue
@@ -166,7 +206,20 @@ export function buildRoster(
     // and drop it from the abilities list — see lib/roster/invulnSave.ts.
     const invulnDigit = findPlainInvulnSave(matched.abilities)
     const baseStats = withInvulnSv(matched.stats, invulnDigit)
-    const baseAbilities = invulnDigit ? stripPlainInvulnSave(matched.abilities) : matched.abilities
+    const strippedAbilities = invulnDigit ? stripPlainInvulnSave(matched.abilities) : matched.abilities
+
+    // Drop abilities granted by a different detachment's rule.
+    // Only active when the roster's detachment was recognised; if unknown we
+    // show everything so no data is silently lost for new / synthesized detachments.
+    const baseAbilities = matchedDetachment
+      ? strippedAbilities.filter(a => {
+          const grantingDetachment = detachmentAbilityMap.get(norm(a.name))
+          // Not in the map → unit-native ability, always keep.
+          // In the map and matches active detachment → keep.
+          // In the map but different detachment → drop.
+          return !grantingDetachment || norm(grantingDetachment) === norm(matchedDetachment.name)
+        })
+      : strippedAbilities
 
     // Split parsed enhancement names: those matching a known detachment enhancement
     // become clickable Rule chips; the rest fall back to plain hot chips (covers
