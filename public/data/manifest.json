@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
-  "bsDataTag": "v10.6.0",
-  "bsDataCommit": "b972d7af225ce75da9fe5f04e010fa3888294332",
-  "buildTime": "2026-05-25T17:28:24.747Z",
+  "bsDataTag": "main",
+  "bsDataCommit": "7a58ddbe7b5df3394affade5ca90c694bbe035af",
+  "buildTime": "2026-06-05T11:31:04.999Z",
   "factions": [
     {
       "factionId": "ynnari",
@@ -14,9 +14,9 @@
         "Harlequins"
       ],
       "artifact": "/data/factions/ynnari.json",
-      "bytes": 204942,
-      "sha256": "d6c08d8ad531277b1f318a8c6155a257f35fb6d12b3638c7379134e57aba0456",
-      "unitCount": 87
+      "bytes": 219724,
+      "sha256": "b758110d1bcf178e8202a891cc41d3b7a69929704812af111d3980508deb82a4",
+      "unitCount": 86
     },
     {
       "factionId": "chaos-daemons",
@@ -25,9 +25,9 @@
         "Legiones Daemonica"
       ],
       "artifact": "/data/factions/chaos-daemons.json",
-      "bytes": 210848,
-      "sha256": "d273d331d93a79b503f58d241cb2d4a3c7635eeda2c3dd8ef20a1a33f9ee3630",
-      "unitCount": 70
+      "bytes": 243288,
+      "sha256": "473a23a9ff50c40e155ae72fcda127474fabf0040bfb2786b1c1e5f1d3e22581",
+      "unitCount": 73
     },
     {
       "factionId": "chaos-knights",
@@ -36,63 +36,81 @@
         "Chaos Knights"
       ],
       "artifact": "/data/factions/chaos-knights.json",
-      "bytes": 124559,
-      "sha256": "b1314adf71f58351d311c11a6e320552b083becb7b574718eecaf468e2730a60",
-      "unitCount": 26
+      "bytes": 128474,
+      "sha256": "587a1113f6716d985308101aa616765b81e99fdbb47b4902cb1b315f5a0a6d6d",
+      "unitCount": 25
     },
     {
       "factionId": "chaos-space-marines",
       "factionName": "Chaos - Chaos Space Marines",
       "factionKeywords": [
-        "Emperor's Children",
         "Heretic Astartes"
       ],
       "artifact": "/data/factions/chaos-space-marines.json",
-      "bytes": 352783,
-      "sha256": "9897ef81c1a0499b39bb29c350b7c14e270537be81558be395cc600663c2a455",
-      "unitCount": 114
+      "bytes": 436963,
+      "sha256": "e41de0a1b866053cdf1c7514e010efe23b4cb23268af830a3bb96fb9bbec2e40",
+      "unitCount": 119
     },
     {
       "factionId": "death-guard",
       "factionName": "Chaos - Death Guard",
       "factionKeywords": [
-        "Death Guard"
+        "Death Guard",
+        "Plague Legions",
+        "Legiones Daemonica"
       ],
       "artifact": "/data/factions/death-guard.json",
-      "bytes": 208756,
-      "sha256": "5d169ff48fb0b074fc725394e82122e15db82da0a117eda5620ae5fd5462ffdd",
-      "unitCount": 69
+      "bytes": 284928,
+      "sha256": "dbbff40da79242a6a6f7096ee6d860001dd58a2fc4113e658ae5dbf95f2a9e67",
+      "unitCount": 82
+    },
+    {
+      "factionId": "emperor-s-children",
+      "factionName": "Chaos - Emperor's Children",
+      "factionKeywords": [
+        "Emperor's Children",
+        "Legions of Excess",
+        "Legiones Daemonica"
+      ],
+      "artifact": "/data/factions/emperor-s-children.json",
+      "bytes": 143259,
+      "sha256": "1fbae2976ce56aeb4457e084cf1802a3eff7c076f0d56af3c1099a8c7aaa8347",
+      "unitCount": 34
     },
     {
       "factionId": "thousand-sons",
       "factionName": "Chaos - Thousand Sons",
       "factionKeywords": [
-        "Thousand Sons"
+        "Thousand Sons",
+        "Scintillating Legions",
+        "Legiones Daemonica"
       ],
       "artifact": "/data/factions/thousand-sons.json",
-      "bytes": 192451,
-      "sha256": "58e76ea9fc15c3e310cf8deffc93cb65bde651996136a9c287d2941463c39a7c",
-      "unitCount": 61
+      "bytes": 275215,
+      "sha256": "0300886de80ee1df084ddc22df70a3c0a6131a4ca0afb480dd4988ff0255a2c5",
+      "unitCount": 73
     },
     {
       "factionId": "titanicus-traitoris",
       "factionName": "Chaos - Titanicus Traitoris",
       "factionKeywords": [],
       "artifact": "/data/factions/titanicus-traitoris.json",
-      "bytes": 31359,
-      "sha256": "f203a0a403242d52ca1e8746eabe5bb800165eae6ececcfd1ad7f818ef5d9eec",
-      "unitCount": 6
+      "bytes": 25194,
+      "sha256": "08d009537bd2852e56447a22164505253fdbcebcceb5d0de5ca25541292dca3b",
+      "unitCount": 5
     },
     {
       "factionId": "world-eaters",
       "factionName": "Chaos - World Eaters",
       "factionKeywords": [
-        "World Eaters"
+        "World Eaters",
+        "Blood Legions",
+        "Legiones Daemonica"
       ],
       "artifact": "/data/factions/world-eaters.json",
-      "bytes": 177481,
-      "sha256": "071097c8d01b367813fa82a0b3a4c8f0cd4fed1dc01ac9e8eabe19baefd2db7e",
-      "unitCount": 57
+      "bytes": 249240,
+      "sha256": "4e0a3504a8ef4671dce47543f5c0d1ae3c05d8c634c7b64a74ce5f38828d8170",
+      "unitCount": 69
     },
     {
       "factionId": "adepta-sororitas",
@@ -101,9 +119,9 @@
         "Adepta Sororitas"
       ],
       "artifact": "/data/factions/adepta-sororitas.json",
-      "bytes": 150505,
-      "sha256": "dc3bd89dc18a9b2a9a41edd640bdefc103580bbc8137e783b6886c50e7564b3a",
-      "unitCount": 43
+      "bytes": 172282,
+      "sha256": "1a0366153e9e4dc7926a267197337ff8c1dee01effc646f146ee6c8b3e0eb34b",
+      "unitCount": 45
     },
     {
       "factionId": "black-templars",
@@ -113,9 +131,9 @@
         "Black Templars"
       ],
       "artifact": "/data/factions/black-templars.json",
-      "bytes": 488584,
-      "sha256": "c931727bf1137bdb48ff8995137beda84de09fc8f7bb2027b144302f2aa5b4ef",
-      "unitCount": 182
+      "bytes": 556071,
+      "sha256": "8aec798d669479b87852d7fb00b600d3d72eef7bc8601e062e5e47ff0c0d0263",
+      "unitCount": 188
     },
     {
       "factionId": "blood-angels",
@@ -125,8 +143,8 @@
         "Blood Angels"
       ],
       "artifact": "/data/factions/blood-angels.json",
-      "bytes": 532924,
-      "sha256": "a2aa8f9dc11a03f17e7cb6bce464895505660524c483de36d3549e7ce48cae71",
+      "bytes": 578084,
+      "sha256": "cb59de126ec98a27f0f4fcbad2b37e80cd24ad1190e4d9e43078fb9b17126d12",
       "unitCount": 195
     },
     {
@@ -137,8 +155,8 @@
         "Adeptus Astartes"
       ],
       "artifact": "/data/factions/dark-angels.json",
-      "bytes": 512165,
-      "sha256": "9e80bf30a687cc2612f248ffe090b7755f8fb6493f2b053be21f271e57d41f88",
+      "bytes": 553680,
+      "sha256": "a7d3d68717bccdf448a2c7ecd561cc139c08978ecf9ba1f0feded8654cdd9721",
       "unitCount": 187
     },
     {
@@ -150,9 +168,9 @@
         "Agents of the Imperium"
       ],
       "artifact": "/data/factions/deathwatch.json",
-      "bytes": 562193,
-      "sha256": "7f94b02a0ae64aa48bd80775a152bdc39a3744bcc72a212dd9c446924ab53af1",
-      "unitCount": 210
+      "bytes": 662182,
+      "sha256": "59f62b88b9c06aabb11a099e82640d3220dc43324a2f8b5470139b9104c3d270",
+      "unitCount": 221
     },
     {
       "factionId": "imperial-fists",
@@ -162,8 +180,8 @@
         "Imperial Fists"
       ],
       "artifact": "/data/factions/imperial-fists.json",
-      "bytes": 448638,
-      "sha256": "2e7ce419a715e137771f2caaac598d0f7c677d799b45b0e9482bcfdbd52b18cf",
+      "bytes": 493624,
+      "sha256": "c45f2a1fe08215bb9e08b4daac96a57f25c990cb86bca1f3534401eac255cc11",
       "unitCount": 171
     },
     {
@@ -174,9 +192,9 @@
         "Iron Hands"
       ],
       "artifact": "/data/factions/iron-hands.json",
-      "bytes": 442913,
-      "sha256": "9f5aef2d9409643971ddd00640c299fa3d7a93393bb1910ef14ada876d4a7b4c",
-      "unitCount": 169
+      "bytes": 490085,
+      "sha256": "61842a1e135584f992f55ce047e3a5c8d39420505d8bca2377219230c4361c5d",
+      "unitCount": 170
     },
     {
       "factionId": "raven-guard",
@@ -186,9 +204,9 @@
         "Raven Guard"
       ],
       "artifact": "/data/factions/raven-guard.json",
-      "bytes": 443100,
-      "sha256": "9af7c4f739dab2849f83f9dca3a89cc1fdc9798285010acd0c113ae1c1086225",
-      "unitCount": 169
+      "bytes": 489759,
+      "sha256": "4e5af3f72c22a150ef0ee6c04aa240b8d6e9f34cd1c53baba9b32683530d6666",
+      "unitCount": 170
     },
     {
       "factionId": "salamanders",
@@ -198,9 +216,20 @@
         "Salamanders"
       ],
       "artifact": "/data/factions/salamanders.json",
-      "bytes": 445170,
-      "sha256": "61a0734c1cd0888c1716ae13b4908b51732bc9eb0747e5120f802b4124eb5dff",
+      "bytes": 489522,
+      "sha256": "18999bf68af4760caff2cc10c4c86cc6ac6a1af16ce96a56b1804b1c22f9b8c4",
       "unitCount": 170
+    },
+    {
+      "factionId": "space-marines",
+      "factionName": "Imperium - Adeptus Astartes - Space Marines",
+      "factionKeywords": [
+        "Adeptus Astartes"
+      ],
+      "artifact": "/data/factions/space-marines.json",
+      "bytes": 481457,
+      "sha256": "e2fccb788bab1617b497979109f56a0190284e80fe9991f0d19b4880dd8e02da",
+      "unitCount": 168
     },
     {
       "factionId": "space-wolves",
@@ -210,9 +239,9 @@
         "Space Wolves"
       ],
       "artifact": "/data/factions/space-wolves.json",
-      "bytes": 547496,
-      "sha256": "cc0fa19bd633d020442462f136e24420c2a2500d81405bfb702b1b52a92b5555",
-      "unitCount": 204
+      "bytes": 615482,
+      "sha256": "09cc162134dd5ead4357a6f881c6da13ced767dd81f847f676aaafb3c9ad75be",
+      "unitCount": 210
     },
     {
       "factionId": "ultramarines",
@@ -222,9 +251,9 @@
         "Ultramarines"
       ],
       "artifact": "/data/factions/ultramarines.json",
-      "bytes": 464811,
-      "sha256": "0c7c8790e537f99866994898e58952f7f99ec8e2b1b05f4d8722caba4540c728",
-      "unitCount": 179
+      "bytes": 526947,
+      "sha256": "1b5372d830c2c0c101cb4c76c45abb1c02570b66e09780650f1bb722c9b411f9",
+      "unitCount": 184
     },
     {
       "factionId": "white-scars",
@@ -234,9 +263,9 @@
         "White Scars"
       ],
       "artifact": "/data/factions/white-scars.json",
-      "bytes": 442927,
-      "sha256": "593998e795495763506146c2023d23e9fc07dd97e2bfe1c1128590d66eaf9273",
-      "unitCount": 169
+      "bytes": 489336,
+      "sha256": "a44dd88bb2298704508b5702020cbb6f3ae4cafcb927dcf37f5e48adb42d86f3",
+      "unitCount": 170
     },
     {
       "factionId": "adeptus-custodes",
@@ -245,9 +274,9 @@
         "Adeptus Custodes"
       ],
       "artifact": "/data/factions/adeptus-custodes.json",
-      "bytes": 165162,
-      "sha256": "97c8c401745b5482a0ebbb4d4d431ddcc1bb3f423da9ea558c43cad47583d7d9",
-      "unitCount": 45
+      "bytes": 171910,
+      "sha256": "1fb7500e452b6b83cb3951f1ec4c6c7edb8bb5bf73d9178682839a767021ea6a",
+      "unitCount": 44
     },
     {
       "factionId": "adeptus-mechanicus",
@@ -256,18 +285,18 @@
         "Adeptus Mechanicus"
       ],
       "artifact": "/data/factions/adeptus-mechanicus.json",
-      "bytes": 172452,
-      "sha256": "eaba7b872e03e2ebf290382578c9cf00a0b3ddcf5f74b4023c76d0dbe9b0b4bc",
-      "unitCount": 49
+      "bytes": 198770,
+      "sha256": "90a3b5fba9ef6202f35bac7cc478729b6d2db2bb2ffe1c89740b3cd95711cef6",
+      "unitCount": 52
     },
     {
       "factionId": "adeptus-titanicus",
       "factionName": "Imperium - Adeptus Titanicus",
       "factionKeywords": [],
       "artifact": "/data/factions/adeptus-titanicus.json",
-      "bytes": 61785,
-      "sha256": "57feac7f11e7c59568ef4cc09abc48f91ec217a56694dd8980096bb4e9789463",
-      "unitCount": 14
+      "bytes": 46832,
+      "sha256": "16c7464d733704d67d844c2c89591bca6760074594b37d47a0ad11e4cd794508",
+      "unitCount": 10
     },
     {
       "factionId": "agents-of-the-imperium",
@@ -276,9 +305,9 @@
         "Agents of the Imperium"
       ],
       "artifact": "/data/factions/agents-of-the-imperium.json",
-      "bytes": 176925,
-      "sha256": "be9e8b8a647c86d8a67095f5869f603f70b7b3fb98d6ffcee0b3e98b901eeded",
-      "unitCount": 47
+      "bytes": 221392,
+      "sha256": "e2a25a3b2b204ee760617800efe5b57bae423e04f2bf554f49dfa101975ce252",
+      "unitCount": 53
     },
     {
       "factionId": "astra-militarum",
@@ -287,9 +316,9 @@
         "Astra Militarum"
       ],
       "artifact": "/data/factions/astra-militarum.json",
-      "bytes": 347213,
-      "sha256": "854dddbc0fb543082eaa2c302f50eac9573a87f52f0707facbbcf029bda765bf",
-      "unitCount": 121
+      "bytes": 373824,
+      "sha256": "146a382b969f36a503ef6f2968110949c6cab68350fcf97d0060c3063bd9c522",
+      "unitCount": 125
     },
     {
       "factionId": "grey-knights",
@@ -298,9 +327,9 @@
         "Grey Knights"
       ],
       "artifact": "/data/factions/grey-knights.json",
-      "bytes": 160017,
-      "sha256": "8073c0ff73cafb2e35116810e8bad944aea62c7475b27220778dbeffd5fb8353",
-      "unitCount": 46
+      "bytes": 187882,
+      "sha256": "e4a2c46159a148999ab4112d283f3e83d50d1e5b7df9a0bb47413537c7cfe7c4",
+      "unitCount": 45
     },
     {
       "factionId": "imperial-knights",
@@ -309,20 +338,9 @@
         "Imperial Knights"
       ],
       "artifact": "/data/factions/imperial-knights.json",
-      "bytes": 145671,
-      "sha256": "8326673db81819f6cf9859991d8994598cfcd0b7710f39ffa1938d8e9ec9e4b9",
-      "unitCount": 34
-    },
-    {
-      "factionId": "space-marines",
-      "factionName": "Imperium - Space Marines",
-      "factionKeywords": [
-        "Adeptus Astartes"
-      ],
-      "artifact": "/data/factions/space-marines.json",
-      "bytes": 431336,
-      "sha256": "6f388b7b2a7497a8985a72e4db41341f89ebda49166b86ddda4632290827505b",
-      "unitCount": 168
+      "bytes": 138947,
+      "sha256": "414af354e795e24c6e6f8aa8f24c06154c5acf68f5ecda0f910e7fca61361dee",
+      "unitCount": 32
     },
     {
       "factionId": "craftworlds",
@@ -333,21 +351,22 @@
         "Ynnari"
       ],
       "artifact": "/data/factions/craftworlds.json",
-      "bytes": 257204,
-      "sha256": "820c08d5fa73805a14b4ee1a8a800bb1780cb66e75a4d7e48ed68a90697149d2",
-      "unitCount": 87
+      "bytes": 296587,
+      "sha256": "e7c9b21518d71e77bf7ab224d123c4ee83f779effb97b7ca2f986235a6a740d4",
+      "unitCount": 92
     },
     {
       "factionId": "drukhari",
       "factionName": "Xenos - Drukhari",
       "factionKeywords": [
         "Drukhari",
-        "Harlequins"
+        "Harlequins",
+        "Asuryani"
       ],
       "artifact": "/data/factions/drukhari.json",
-      "bytes": 120893,
-      "sha256": "34f9acea0505fb5c2543d06d555052ad21530081a075047b087bd80203ac55dc",
-      "unitCount": 35
+      "bytes": 173194,
+      "sha256": "de9845c63461d667adaab83102ab62a8caa8a09d9e16cc2622f90aa31c8c22bb",
+      "unitCount": 42
     },
     {
       "factionId": "genestealer-cults",
@@ -358,9 +377,9 @@
         "Tyranids"
       ],
       "artifact": "/data/factions/genestealer-cults.json",
-      "bytes": 298494,
-      "sha256": "0a4e637ee6c4473955cff0156f84c67a094a0598ce99d68bf6b45fd30558d227",
-      "unitCount": 113
+      "bytes": 381899,
+      "sha256": "1d83ed4efc243728ab437cb1c4f4cc68ed073961dd7d1d4bd003e9bbb98d44f1",
+      "unitCount": 126
     },
     {
       "factionId": "leagues-of-votann",
@@ -369,9 +388,9 @@
         "Leagues of Votann"
       ],
       "artifact": "/data/factions/leagues-of-votann.json",
-      "bytes": 79380,
-      "sha256": "a56cba4676cdc4954806e416383a34f9f05f60c63c4ac2c2f20300b1da8d2bca",
-      "unitCount": 13
+      "bytes": 145198,
+      "sha256": "edce7bf3564b48d6c3850a64ddbb39d1d9e318126199570bde0b0ab5dc034b40",
+      "unitCount": 25
     },
     {
       "factionId": "necrons",
@@ -380,9 +399,9 @@
         "Necrons"
       ],
       "artifact": "/data/factions/necrons.json",
-      "bytes": 166080,
-      "sha256": "16267167f806bc999a8b51c3cf56e06345c39d79d1f22b3c652c385eab4b966b",
-      "unitCount": 59
+      "bytes": 213600,
+      "sha256": "6bb5136363ac8bf008f77a692184b7108162e7bba04fc51382085dc1027e3a7d",
+      "unitCount": 66
     },
     {
       "factionId": "orks",
@@ -391,9 +410,9 @@
         "Orks"
       ],
       "artifact": "/data/factions/orks.json",
-      "bytes": 234243,
-      "sha256": "fcb75dd2461ef2d8c81d648475406111bcf192fc9f035ab316457c152dfe3a75",
-      "unitCount": 86
+      "bytes": 276896,
+      "sha256": "01f5eac071888d10ad1d26c6f9b2e73af942274a50403caa710fcc7277c44edb",
+      "unitCount": 91
     },
     {
       "factionId": "t-au-empire",
@@ -402,9 +421,9 @@
         "T'au Empire"
       ],
       "artifact": "/data/factions/t-au-empire.json",
-      "bytes": 185625,
-      "sha256": "a783de2e34414d3801affb5b4e0b77f6547f57d1f2c74a24d6418b85c54e0cbb",
-      "unitCount": 62
+      "bytes": 228641,
+      "sha256": "dbbf29ae34de332ac90c7e96ecc4c057881e6aede0e3f87da2f4420905ce1ca4",
+      "unitCount": 66
     },
     {
       "factionId": "tyranids",
@@ -413,17 +432,17 @@
         "Tyranids"
       ],
       "artifact": "/data/factions/tyranids.json",
-      "bytes": 142540,
-      "sha256": "792f0d349f22a3df92b0438f9710028d4349f35b73063298643eb57586836929",
-      "unitCount": 53
+      "bytes": 184953,
+      "sha256": "67fe8bbd0c071f481bf559ce396f7cf39cb79fc894cc5aa85e588751dcc1ec22",
+      "unitCount": 56
     }
   ],
   "sharedDetachments": [
     {
-      "id": "shared-f78da676e365",
-      "artifact": "/data/shared/shared-f78da676e365.json",
-      "bytes": 32193,
-      "sha256": "f6c595a44f8e8882e46ae405b08a2597f7151feb6f80fad539cc2b2997b43d5b"
+      "id": "shared-16df70b7887c",
+      "artifact": "/data/shared/shared-16df70b7887c.json",
+      "bytes": 69877,
+      "sha256": "e845d24e7738b071f53285f31a9faa040d6faa0a03705856b3b02f1b1b9aa6dc"
     }
   ]
 }
