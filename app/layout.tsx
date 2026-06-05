@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next'
 import { Geist, JetBrains_Mono, Instrument_Serif } from 'next/font/google'
+import { Analytics } from '@vercel/analytics/next'
 import '../styles/globals.css'
 
 const geist = Geist({
@@ -38,7 +39,7 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={`${geist.variable} ${jetbrainsMono.variable} ${instrumentSerif.variable}`}>
-      <body>{children}</body>
+      <body>{children}<Analytics /></body>
     </html>
   )
 }
