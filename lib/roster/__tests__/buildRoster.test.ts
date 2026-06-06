@@ -6,7 +6,7 @@ import type { ParsedArmy } from '../parseGwText'
 /** Minimal artifact fixture — only the fields buildRoster touches. */
 function makeArtifact(overrides: Partial<FactionArtifact> = {}): FactionArtifact {
   return {
-    schemaVersion: 1,
+    schemaVersion: 2,
     factionId: 'chaos-daemons',
     factionName: 'Chaos Daemons',
     bsCatalogueId: 'test-cat-id',
@@ -306,7 +306,7 @@ describe('buildRoster – unit matching', () => {
 describe('buildRoster – enhancement resolution', () => {
   function makeArtifactWithEnhancements(): FactionArtifact {
     return {
-      schemaVersion: 1,
+      schemaVersion: 2,
       factionId: 'chaos-daemons',
       factionName: 'Chaos Daemons',
       bsCatalogueId: 'test-cat-id',
@@ -379,7 +379,7 @@ describe('buildRoster – enhancement resolution', () => {
   // wouldn't resolve to a Rule and would leak into `hot[]`.
   it('matches enhancements across curly vs straight apostrophes', () => {
     const artifact: FactionArtifact = {
-      schemaVersion: 1,
+      schemaVersion: 2,
       factionId: 'chaos-daemons',
       factionName: 'Chaos Daemons',
       bsCatalogueId: 'test-cat-id',
@@ -432,5 +432,81 @@ describe('buildRoster – enhancement resolution', () => {
     expect(unit.enhancements[0].name).toBe('A’rgath, the King of Blades')
     expect(unit.hot).not.toContain("A'rgath, the King of Blades")
     expect(unit.hot).not.toContain('A’rgath, the King of Blades')
+  })
+})
+
+// ── Structured abilities (schema v2) ──────────────────────────────────────────
+
+describe('buildRoster – structured abilities', () => {
+  // A unit with one ability of each category plus a themed group whose three
+  // members classify to DIFFERENT phases: one passive, one shooting-only, one
+  // movement-only — exactly Magnus's "Crimson King" shape.
+  function makeArtifactWithGroup(): FactionArtifact {
+    return makeArtifact({
+      units: [
+        {
+          id: 'unit-magnus',
+          bsId: 'bs-magnus',
+          name: 'Magnus the Red',
+          role: 'character',
+          models: 1,
+          stats: { M: '12"', T: '11', SV: '4+', W: '18', LD: '6+', OC: '5' },
+          hot: [],
+          weapons: [
+            { name: 'Blazing Staff', kind: 'ranged', stats: { R: '18"', A: '6', BS: '2+', S: '9', AP: '-3', D: '3' }, tags: [], mods: [] },
+            { name: 'Crystal Staff', kind: 'melee', stats: { A: '6', WS: '2+', S: '9', AP: '-3', D: '3' }, tags: [], mods: [] },
+          ],
+          abilities: [
+            { name: 'Deep Strike', timing: '', effect: 'Set up in Reserves.', source: 'Core', category: 'core' },
+            { name: 'The Shadow of Chaos', timing: '', effect: 'Army-wide effect.', source: 'Thousand Sons', category: 'faction' },
+            { name: 'Impossible Form', timing: '', effect: 'Subtract 1 from the Damage characteristic of attacks made against this model.', source: 'Thousand Sons', category: 'datasheet', group: 'Crimson King' },
+            { name: 'Treason of Tzeentch', timing: '', effect: "At the start of your opponent's Shooting phase, select one enemy unit.", source: 'Thousand Sons', category: 'datasheet', group: 'Crimson King' },
+            { name: 'Time Flux', timing: '', effect: 'Add 2" to the Move characteristic of nearby friendly units.', source: 'Thousand Sons', category: 'datasheet', group: 'Crimson King' },
+          ],
+          stratagems: [],
+          reminders: [],
+          tags: [],
+          keywords: ['Chaos Daemons'],
+          ruleRefs: [],
+          damaged: { name: 'Damaged: 1-9 wounds remaining', timing: '', effect: 'Subtract 1 from this model’s hit rolls.', source: 'Thousand Sons' },
+        },
+      ],
+    })
+  }
+
+  const parsed: ParsedArmy = {
+    factionKeyword: 'CHAOS DAEMONS',
+    detachment: undefined,
+    units: [{ name: 'Magnus the Red', wargear: [], enhancements: [] }],
+  }
+
+  it('drops the army-level faction ability but keeps core + datasheet', () => {
+    const { roster } = buildRoster(parsed, makeArtifactWithGroup())
+    const unit = roster.charge!.find(u => u.name === 'Magnus the Red')!
+    const names = unit.abilities.map(a => a.name)
+    expect(names).not.toContain('The Shadow of Chaos')
+    expect(names).toContain('Deep Strike')
+    expect(unit.abilities.find(a => a.name === 'Deep Strike')!.category).toBe('core')
+  })
+
+  it('keeps a themed group whole in every phase a member is relevant', () => {
+    const { roster } = buildRoster(parsed, makeArtifactWithGroup())
+    // Movement: only Time Flux is natively a movement ability, yet the cohesion
+    // rule must surface all three "Crimson King" members (regression: the group
+    // used to fragment to 2 of 3).
+    const move = roster.movement!.find(u => u.name === 'Magnus the Red')!
+    const ck = move.abilities.filter(a => a.group === 'Crimson King').map(a => a.name)
+    expect(ck).toHaveLength(3)
+    expect(ck).toEqual(
+      expect.arrayContaining(['Impossible Form', 'Treason of Tzeentch', 'Time Flux']),
+    )
+  })
+
+  it('surfaces the separated Damaged profile on its own field, not in abilities', () => {
+    const { roster } = buildRoster(parsed, makeArtifactWithGroup())
+    const unit = roster.fight!.find(u => u.name === 'Magnus the Red')!
+    expect(unit.damaged?.name).toContain('Damaged')
+    expect(unit.full?.damaged?.name).toContain('Damaged')
+    expect(unit.abilities.map(a => a.name)).not.toContain(unit.damaged!.name)
   })
 })

@@ -42,6 +42,58 @@ export function collectCrusadeIds(gst: BsNode): Set<string> {
 }
 
 /**
+ * Collect the ids of every rule node defined in the GST's `sharedRules`.
+ *
+ * These are the edition's **Core** abilities — Deep Strike, Leader, Scouts, Stealth,
+ * Lone Operative, Feel No Pain, … — defined once in `Warhammer 40,000.gst` and linked
+ * onto datasheets by id. BSData carries no "this is a Core ability" flag; membership in
+ * this set IS that signal. (The GST also defines weapon-keyword rules, but those are
+ * already dropped upstream by `isWeaponScopedAbility` / `isWeaponKeywordText`, so the
+ * remaining unit rule info-links whose target is in this set are exactly the Core ones.)
+ *
+ * Walks the subtree like {@link collectCrusadeIds} so any nested rule nodes are caught,
+ * not just the top-level `sharedRules.rule` entries.
+ */
+export function collectGstRuleIds(gst: BsNode): Set<string> {
+  const ids = new Set<string>()
+  const rules: BsNode[] = [].concat(gst.sharedRules?.rule ?? [])
+  const stack: BsNode[] = [...rules]
+  while (stack.length) {
+    const node = stack.pop()!
+    if (!node || typeof node !== 'object') continue
+    if (typeof node.id === 'string') ids.add(node.id)
+    for (const [key, val] of Object.entries(node)) {
+      if (key === 'id' || key === '#text') continue
+      if (Array.isArray(val)) {
+        for (const c of val) if (c && typeof c === 'object') stack.push(c)
+      } else if (val && typeof val === 'object') {
+        stack.push(val)
+      }
+    }
+  }
+  return ids
+}
+
+/**
+ * Collect the names of every profile type defined in the GST (`<profileTypes>`).
+ *
+ * The GST owns the structural profile types — `Unit`, `Ranged Weapons`, `Melee Weapons`,
+ * `Abilities`, and `Transport`. Every *themed* ability group (Be'lakor "Shadow Form",
+ * Magnus "Crimson King", the Silent King "Triarch Abilities", AM "Orders", …) is instead
+ * defined inside a faction catalogue. So "this profile type is a themed group" is exactly
+ * "its type is NOT in this set" — the profileType analogue of the Core-rule signal. Used
+ * by `normalize` to avoid mis-grouping the structural `Transport` capacity profile (the
+ * one GST type that, like `Abilities`, reaches the unit ability stream).
+ */
+export function collectGstProfileTypes(gst: BsNode): Set<string> {
+  const names = new Set<string>()
+  for (const pt of gst.profileTypes?.profileType ?? []) {
+    if (typeof pt?.name === 'string') names.add(pt.name)
+  }
+  return names
+}
+
+/**
  * Deep-walk parsed trees, indexing every node that carries an `id`.
  * Ids are assumed globally unique across the catalogue chain (they are BSData UUIDs);
  * if the same id appears twice, the last node walked wins.
@@ -110,8 +162,12 @@ export interface ResolvedUnit {
   weapons: Profile[]
   abilities: Profile[]
   rules: RuleNode[]
-  /** Non-weapon-scoped rule infoLinks with their modifier-resolved display names. */
-  unitRules: Array<{ name: string; effect: string }>
+  /**
+   * Non-weapon-scoped rule infoLinks with their modifier-resolved display names.
+   * `core` is true when the linked rule is defined in the GST `sharedRules` (an edition
+   * Core ability — see {@link collectGstRuleIds}); `normalize` uses it to classify.
+   */
+  unitRules: Array<{ name: string; effect: string; core: boolean }>
   keywords: string[]
   points?: string
 }
@@ -151,7 +207,11 @@ function hasUnitProfile(node: BsNode, index: BsIndex, seen = new Set<string>(), 
  * imported catalogues (those linked with importRootEntries) surfaces allied/shared
  * datasheets exactly as a roster builder would offer them.
  */
-export function enumerateUnits(catalogues: Catalogue[], index: BsIndex): ResolvedUnit[] {
+export function enumerateUnits(
+  catalogues: Catalogue[],
+  index: BsIndex,
+  coreRuleIds: Set<string> = new Set(),
+): ResolvedUnit[] {
   const roots: BsNode[] = []
   const seenRoot = new Set<string>()
 
@@ -167,11 +227,14 @@ export function enumerateUnits(catalogues: Catalogue[], index: BsIndex): Resolve
     for (const entry of cat.selectionEntries?.selectionEntry ?? []) consider(entry)
   }
 
-  return roots.map((root) => collectUnit(root, index))
+  return roots.map((root) => collectUnit(root, index, coreRuleIds))
 }
 
-/** Walk a unit subtree, resolving links, gathering its stat/weapon/ability/rule nodes. */
-function collectUnit(root: BsNode, index: BsIndex): ResolvedUnit {
+/**
+ * Walk a unit subtree, resolving links, gathering its stat/weapon/ability/rule nodes.
+ * `coreRuleIds` (the GST `sharedRules` id set) tags each unit rule as Core or not.
+ */
+function collectUnit(root: BsNode, index: BsIndex, coreRuleIds: Set<string> = new Set()): ResolvedUnit {
   const unit: ResolvedUnit = {
     bsId: root.id,
     name: root.name ?? '(unnamed)',
@@ -222,7 +285,7 @@ function collectUnit(root: BsNode, index: BsIndex): ResolvedUnit {
           if (isWeaponKeywordText(effect)) continue
           unitRuleIds.add(target.id)
           const name = applyNameModifiers(l.name ?? (target as RuleNode).name, l.modifiers?.modifier ?? [])
-          unit.unitRules.push({ name, effect })
+          unit.unitRules.push({ name, effect, core: coreRuleIds.has(target.id) })
         }
       }
       else if (l.type === 'profile') addProfile(target as Profile)

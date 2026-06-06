@@ -178,6 +178,111 @@
   line-height: 1.2;
 }
 
+/* ── Themed ability groups ───────────────────────────────────────
+   One expandable chip per group (Be'lakor "Shadow Form", …). The chip
+   carries a caret + child count; expanding drops an indented column with
+   the group blurb and the child abilities as their own chips. Mirrors the
+   weapon multi-group's header + indented-children shape. */
+
+.groupList {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.abilityGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.groupChip {
+  appearance: none;
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--border-faint);
+  background: var(--surface-2);
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-family: var(--f-ui);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--fg);
+  line-height: 1.2;
+  cursor: pointer;
+}
+
+.groupCaret {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--fg-mute);
+  transition: transform 0.15s ease;
+}
+
+.groupCount {
+  font-family: var(--f-mono);
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--fg-mute);
+  background: var(--surface-1);
+  border: 1px solid var(--border-faint);
+  border-radius: var(--r-2);
+  padding: 0 4px;
+}
+
+.groupChildren {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-left: 14px;
+  border-left: 1px solid var(--border-faint);
+  margin-left: 6px;
+}
+
+.groupBlurb {
+  margin: 0;
+  font-family: var(--f-ui);
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--fg-mute);
+}
+
+/* ── Core keyword strip ──────────────────────────────────────────
+   Edition-wide abilities (Deep Strike, Stealth, …) demoted to a quiet
+   inline strip — still tappable, but visually subordinate to the
+   datasheet chips above so they read at a glance, not as decisions. */
+
+.coreStrip {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 10px;
+}
+
+.coreKeyword {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  font-family: var(--f-ui);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  color: var(--fg-dim);
+  line-height: 1.3;
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-color: var(--border-faint);
+  text-underline-offset: 2px;
+}
+
 /* Weapon list stacks one-liners; multi-profile groups indent their sub-profiles. */
 .weaponList {
   flex: 1;

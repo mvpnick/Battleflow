@@ -1,5 +1,5 @@
-import { useMemo } from 'react'
-import { Unit, DrawerPayload, Weapon, Stats, PhaseId } from '@/lib/types'
+import { useMemo, useState } from 'react'
+import { Unit, DrawerPayload, Weapon, Stats, PhaseId, UnitAbility } from '@/lib/types'
 import { WeaponProfileRow } from './WeaponProfileRow'
 import { RuleItem } from './RuleItem'
 import { StatRow } from '@/components/ui/StatRow'
@@ -79,6 +79,64 @@ function groupWeapons(weapons: Weapon[]): WeaponGroup[] {
 }
 
 // ─────────────────────────────────────────────────────────────────────────
+// Ability hierarchy
+//
+// Schema v2 classifies each datasheet ability (the army-level `faction` rule is
+// already filtered out in buildRoster) and, for themed sub-ability profiles,
+// tags a `group`. We turn that flat-but-typed list into three render buckets so
+// the collapsed card can show a readable hierarchy instead of N equal chips:
+//
+//   1. datasheet — the unit's own bespoke abilities → prominent chips.
+//   2. groups    — themed sub-ability sets (Be'lakor "Shadow Form", Magnus
+//                  "Crimson King", …) → one expandable chip each.
+//   3. core      — edition-wide keywords (Deep Strike, Stealth, …) → a single
+//                  muted keyword strip.
+//
+// Bucket order matches the collapsed-card layout: datasheet → groups → core.
+// ─────────────────────────────────────────────────────────────────────────
+
+type AbilityGroup = { name: string; blurb?: string; abilities: UnitAbility[] }
+type AbilityBuckets = {
+  datasheet: UnitAbility[]
+  groups: AbilityGroup[]
+  core: UnitAbility[]
+}
+
+function partitionAbilities(abilities: UnitAbility[]): AbilityBuckets {
+  const datasheet: UnitAbility[] = []
+  const core: UnitAbility[] = []
+  const groups: AbilityGroup[] = []
+  const groupByName = new Map<string, AbilityGroup>()
+
+  for (const ability of abilities) {
+    if (ability.category === 'core') {
+      core.push(ability)
+      continue
+    }
+    // `faction` is excluded upstream (army-level section); guard defensively.
+    if (ability.category === 'faction') continue
+
+    if (ability.group) {
+      let group = groupByName.get(ability.group)
+      if (!group) {
+        group = { name: ability.group, abilities: [] }
+        groupByName.set(ability.group, group)
+        groups.push(group)
+      }
+      // The same-named parent ability's text rides on every child as `groupBlurb`;
+      // take the first one we see as the group's heading.
+      if (!group.blurb && ability.groupBlurb) group.blurb = ability.groupBlurb
+      group.abilities.push(ability)
+      continue
+    }
+
+    datasheet.push(ability)
+  }
+
+  return { datasheet, groups, core }
+}
+
+// ─────────────────────────────────────────────────────────────────────────
 // Sub-components
 // ─────────────────────────────────────────────────────────────────────────
 
@@ -90,6 +148,106 @@ function SubSection({ label, count, children }: { label: string; count?: number;
         {count != null && <span className={styles.subCount}>· {count}</span>}
       </div>
       {children}
+    </div>
+  )
+}
+
+/** A single tappable ability chip — opens the ability drawer. Shared by the
+ *  prominent datasheet row and the children of an expanded themed group. */
+function AbilityChip({
+  ability, unit, onOpen,
+}: {
+  ability: UnitAbility
+  unit: Unit
+  onOpen: (p: DrawerPayload) => void
+}) {
+  return (
+    <button
+      type="button"
+      className={`bf-press ${styles.abilityChip}`}
+      onClick={() => onOpen({ kind: 'ability', data: ability, unit })}
+    >
+      {ability.name}
+    </button>
+  )
+}
+
+/**
+ * A themed sub-ability group rendered as one expandable chip (Step 3).
+ *
+ * Collapsed it shows just the group name and a child count; tapping it reveals
+ * the parent blurb (when present) followed by each child ability as its own
+ * tappable chip. Mirrors the weapon "(choose one)" multi-group: a header with an
+ * indented child column. State is local to the chip — each group expands
+ * independently, and collapsing a card doesn't lose the menu's expansion state.
+ */
+function AbilityGroupChip({
+  group, unit, onOpen,
+}: {
+  group: AbilityGroup
+  unit: Unit
+  onOpen: (p: DrawerPayload) => void
+}) {
+  const [open, setOpen] = useState(false)
+  return (
+    <div className={styles.abilityGroup}>
+      <button
+        type="button"
+        className={`bf-press ${styles.groupChip}`}
+        onClick={() => setOpen(o => !o)}
+        aria-expanded={open}
+      >
+        <span
+          className={styles.groupCaret}
+          style={{ transform: open ? 'rotate(90deg)' : 'rotate(0deg)' }}
+        >
+          <svg width="7" height="9" viewBox="0 0 8 10">
+            <path d="M1 1l5 4-5 4" stroke="currentColor" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        </span>
+        {group.name}
+        <span className={styles.groupCount}>{group.abilities.length}</span>
+      </button>
+      {open && (
+        <div className={styles.groupChildren}>
+          {group.blurb && <p className={styles.groupBlurb}>{group.blurb}</p>}
+          <div className={styles.chipRow}>
+            {group.abilities.map((ability, i) => (
+              <AbilityChip key={`${ability.name}-${i}`} ability={ability} unit={unit} onOpen={onOpen} />
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+/**
+ * Core/universal abilities as one compact, muted keyword strip (Step 2).
+ *
+ * Core abilities (Deep Strike, Stealth, Leader, …) are edition-wide and read at
+ * a glance, so they're demoted from full chips to a quiet inline strip. Each
+ * keyword is still tappable and opens its (inline) text in the drawer.
+ */
+function CoreStrip({
+  abilities, unit, onOpen,
+}: {
+  abilities: UnitAbility[]
+  unit: Unit
+  onOpen: (p: DrawerPayload) => void
+}) {
+  return (
+    <div className={styles.coreStrip}>
+      {abilities.map((ability, i) => (
+        <button
+          key={`${ability.name}-${i}`}
+          type="button"
+          className={`bf-press ${styles.coreKeyword}`}
+          onClick={() => onOpen({ kind: 'ability', data: ability, unit })}
+        >
+          {ability.name}
+        </button>
+      ))}
     </div>
   )
 }
@@ -216,7 +374,17 @@ export function UnitPhaseSection({ unit, count, open, phase, onToggle, onOpenDet
     stats: unit.stats,
     weapons: unit.weapons,
     abilities: unit.abilities,
+    damaged: unit.damaged,
   }
+
+  // Split the phase-filtered abilities into the three render buckets the
+  // collapsed menu lays out in order: datasheet chips → group chips → Core strip.
+  // Core abilities keep today's phase-filter behaviour (passive ones surface on
+  // every tab) for consistency with the rest of the menu.
+  const { datasheet, groups, core } = useMemo(
+    () => partitionAbilities(unit.abilities),
+    [unit.abilities],
+  )
 
   // Split by kind so the menu shows one row per action verb. The phase filter
   // typically leaves only one kind populated; SAMPLE_ROSTER (unfiltered demo)
@@ -282,20 +450,30 @@ export function UnitPhaseSection({ unit, count, open, phase, onToggle, onOpenDet
         independently tappable and opens the drawer for that item.
       */}
       <div className={styles.menu}>
-        {unit.abilities.length > 0 && (
+        {/* Abilities, in hierarchy order: datasheet chips → group chips → Core strip. */}
+        {datasheet.length > 0 && (
           <div className={styles.menuRow}>
             <div className={styles.chipRow}>
-              {unit.abilities.map((ability, i) => (
-                <button
-                  key={`${ability.name}-${i}`}
-                  type="button"
-                  className={`bf-press ${styles.abilityChip}`}
-                  onClick={() => onOpenDetail({ kind: 'ability', data: ability, unit })}
-                >
-                  {ability.name}
-                </button>
+              {datasheet.map((ability, i) => (
+                <AbilityChip key={`${ability.name}-${i}`} ability={ability} unit={unit} onOpen={onOpenDetail} />
               ))}
             </div>
+          </div>
+        )}
+
+        {groups.length > 0 && (
+          <div className={styles.menuRow}>
+            <div className={styles.groupList}>
+              {groups.map(group => (
+                <AbilityGroupChip key={group.name} group={group} unit={unit} onOpen={onOpenDetail} />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {core.length > 0 && (
+          <div className={styles.menuRow}>
+            <CoreStrip abilities={core} unit={unit} onOpen={onOpenDetail} />
           </div>
         )}
 
@@ -320,6 +498,22 @@ export function UnitPhaseSection({ unit, count, open, phase, onToggle, onOpenDet
                 <StatRow stats={full.stats} />
               </div>
             </SubSection>
+          )}
+
+          {/*
+            Damaged profile gets its own row, next to the statline it degrades —
+            parallel to how the invuln save folds into SV. Carved out of the
+            ability stream at ingest so it no longer competes with real abilities.
+          */}
+          {full.damaged && (
+            <>
+              {full.stats && Object.keys(full.stats).length > 0 && <hr className="bf-rule" />}
+              <SubSection label="Damaged">
+                <div className={styles.itemList}>
+                  <RuleItem rule={full.damaged} unit={unit} onOpen={onOpenDetail} />
+                </div>
+              </SubSection>
+            </>
           )}
 
           {full.weapons.length > 0 && (

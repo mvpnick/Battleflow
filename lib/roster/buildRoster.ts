@@ -1,5 +1,5 @@
 import type { DetachmentRule, FactionArtifact, GlossaryRule, PreparedUnit } from '../dataModel'
-import type { PhaseId, Roster, Rule, Stats, Strat, Unit, Weapon } from '../types'
+import type { PhaseId, Roster, Rule, Stats, Strat, UnitAbility, Unit, Weapon } from '../types'
 import type { ParsedArmy } from './parseGwText'
 import { norm } from './normalize'
 import { abilityPhasesFor } from './abilityPhase'
@@ -38,6 +38,21 @@ function pickStats(stats: Stats | undefined, phase: PhaseId): Stats | undefined 
     if (key in stats) picked[key] = stats[key]
   }
   return picked
+}
+
+/**
+ * Select the structured abilities the card renders, dropping only the army-level rule.
+ *
+ * Schema v2 stores abilities classified as core / faction / datasheet plus a separated
+ * `damaged` profile. The card consumes the structure directly (Core strip, themed-group
+ * expanders, plain chips), so we keep it intact and only drop the **faction** ability —
+ * the army rule is rendered once in the army-level section (`RosterMeta.armyRules`), not
+ * repeated on every unit (fixing the old leak). The `damaged` profile is surfaced as its
+ * own `Unit.damaged` field rather than folded into this list, so the expanded card can
+ * give it a dedicated row.
+ */
+function selectUnitAbilities(unit: PreparedUnit): UnitAbility[] {
+  return unit.abilities.filter(a => a.category !== 'faction')
 }
 
 function dedup(strs: string[]): string[] {
@@ -216,11 +231,16 @@ export function buildRoster(
     const wargearSet = new Set(parsedUnit.wargear.map(norm))
     const filteredWeapons = filterWeapons(matched.weapons, wargearSet)
 
+    // The v2 structured abilities the card renders: every category except the
+    // army-level `faction` rule. The Damaged profile rides on `matched.damaged`,
+    // surfaced separately below so it gets its own expanded-card row.
+    const unitAbilities = selectUnitAbilities(matched)
+
     // Fold a plain "Invulnerable Save" ability into the SV stat ("7+, 4++")
     // and drop it from the abilities list — see lib/roster/invulnSave.ts.
-    const invulnDigit = findPlainInvulnSave(matched.abilities)
+    const invulnDigit = findPlainInvulnSave(unitAbilities)
     const baseStats = withInvulnSv(matched.stats, invulnDigit)
-    const strippedAbilities = invulnDigit ? stripPlainInvulnSave(matched.abilities) : matched.abilities
+    const strippedAbilities = invulnDigit ? stripPlainInvulnSave(unitAbilities) : unitAbilities
 
     // Drop abilities granted by a different detachment's rule.
     // Only active when the roster's detachment was recognised; if unknown we
@@ -258,6 +278,7 @@ export function buildRoster(
       enhancements,
       weapons: filteredWeapons,
       abilities: baseAbilities,
+      damaged: matched.damaged,
       stratagems: matched.stratagems,
       reminders: matched.reminders,
     }
@@ -266,6 +287,20 @@ export function buildRoster(
     // per-phase filter below is a cheap Set lookup.
     const abilityPhases = base.abilities.map(a => abilityPhasesFor(a))
 
+    // Themed sub-ability groups (Magnus "Crimson King", Be'lakor "Shadow Form", …)
+    // are one cohesive block — the card renders them under a single expandable chip.
+    // Filtering their members individually would fragment the group across phase tabs
+    // (e.g. "Crimson King" showing 2 of 3 because one member is a Shooting-phase
+    // ability). So pool each group's members' relevant phases: a member is kept in a
+    // phase whenever ANY member of its group is relevant there, keeping the group whole.
+    const groupPhases = new Map<string, Set<PhaseId>>()
+    base.abilities.forEach((a, i) => {
+      if (!a.group) return
+      let phases = groupPhases.get(a.group)
+      if (!phases) { phases = new Set(); groupPhases.set(a.group, phases) }
+      for (const p of abilityPhases[i]) phases.add(p)
+    })
+
     // The unfiltered datasheet view, attached to every per-phase copy so the
     // expanded card can render the whole profile regardless of phase. Object
     // references are shared across the six copies — no actual duplication.
@@ -273,6 +308,7 @@ export function buildRoster(
       stats: base.stats,
       weapons: filteredWeapons,
       abilities: base.abilities,
+      damaged: base.damaged,
     }
 
     /**
@@ -285,10 +321,15 @@ export function buildRoster(
     const phaseUnit = (phase: PhaseId, weapons: Weapon[]): Unit => ({
       ...base,
       stats: pickStats(base.stats, phase),
-      abilities: base.abilities.filter((a, i) =>
-        abilityPhases[i].has(phase) &&
-        (phase === 'command' || a.name.toLowerCase() !== 'leader')
-      ),
+      abilities: base.abilities.filter((a, i) => {
+        // Grouped abilities ride on their group's pooled phase set so the group
+        // stays whole; ungrouped abilities use their own. Leader is hidden
+        // everywhere but the command phase (where it's the actionable attach).
+        const relevant = a.group
+          ? groupPhases.get(a.group)!.has(phase)
+          : abilityPhases[i].has(phase)
+        return relevant && (phase === 'command' || a.name.toLowerCase() !== 'leader')
+      }),
       weapons,
       full,
     })

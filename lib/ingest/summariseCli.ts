@@ -158,19 +158,19 @@ async function saveOverrides(overrides: Overrides): Promise<void> {
 
 const EXAMPLES = `
 Effect: "Until the attacking unit has finished making its attacks, each time an attack targets your unit, worsen the Armour Penetration characteristic of that attack by 1."
-Summary: -1 to AP on all incoming attacks
+Summary: -1 to AP on all incoming attacks.
 
 Effect: "Until the end of the phase, weapons equipped by models in your unit have the [LETHAL HITS] ability."
-Summary: Grant [LETHAL HITS] to unit's weapons
+Summary: Grant [LETHAL HITS] to unit's weapons.
 
 Effect: "That unit can attempt to Fall Back, and when doing so its models can move through models from enemy units … That unit can then act normally this turn."
-Summary: Fall Back through enemies; act normally this turn
+Summary: Fall Back through enemies; act normally this turn.
 `.trim()
 
 const SYSTEM_PROMPT = `You write ultra-terse mechanical summaries for Warhammer 40,000 stratagems.
 
 Rules:
-- Output ONLY the summary text — no explanation, no prefix like "Summary:", no trailing punctuation
+- Output ONLY the summary text — no explanation, no prefix like "Summary:". End with a single period.
 - Be as short as possible while remaining unambiguous
 - Compress aggressively: "-1 to AP" not "Worsen the Armour Penetration of all attacks by 1"
 - Preserve game-term capitalisation exactly: [LETHAL HITS], INFANTRY, Battle-shocked, Engagement Range, Fall Back
@@ -227,6 +227,15 @@ async function promptUser(
 type FileHash = { sha256: string; bytes: number }
 
 /**
+ * Ensure a summary ends with exactly one period. Summaries can legitimately end with a closing
+ * quote (inches: `6"`) or paren, so the period is appended after them. Idempotent.
+ */
+function withTerminalPeriod(summary: string): string {
+  const trimmed = summary.trimEnd()
+  return trimmed.endsWith('.') ? trimmed : `${trimmed}.`
+}
+
+/**
  * Apply the summary map to all JSON files in place.
  *
  * Reads each file once, patches all targeted stratagems, and writes back. Files are kept in their
@@ -257,7 +266,7 @@ async function applyResults(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const raw: any = JSON.parse(await readFile(filePath, 'utf8'))
     for (const { detIndex, stratIndex, summary } of updates) {
-      raw.detachments[detIndex].stratagems[stratIndex].summary = summary
+      raw.detachments[detIndex].stratagems[stratIndex].summary = withTerminalPeriod(summary)
       stratagsUpdated++
     }
     // Write back minified — same format as other ingest CLIs produce

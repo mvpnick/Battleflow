@@ -176,10 +176,18 @@ export interface Catalogue {
   categoryEntries?: { categoryEntry?: CategoryEntry[] }
 }
 
+/** A profile-type definition (`<profileType>`). The GST defines the structural ones
+ *  (Unit, Ranged/Melee Weapons, Abilities, Transport); catalogues define themed ones. */
+export interface ProfileType {
+  id: string
+  name: string
+}
+
 export interface GameSystem {
   id: string
   name: string
   revision: string
+  profileTypes?: { profileType?: ProfileType[] }
   sharedRules?: { rule?: RuleNode[] }
   sharedProfiles?: { profile?: Profile[] }
   categoryEntries?: { categoryEntry?: CategoryEntry[] }

@@ -45,6 +45,7 @@ export const SAMPLE_ROSTER: Roster = {
           cond: 'If this unit charged',
           effect: 'Improve melee output this activation.',
           source: 'Unit Ability',
+          category: 'datasheet',
         },
         {
           name: 'Sworn Vow',
@@ -52,6 +53,7 @@ export const SAMPLE_ROSTER: Roster = {
           cond: 'Leader attached',
           effect: 'Reroll wound rolls of 1 against the chosen target.',
           source: 'Faction Rule',
+          category: 'datasheet',
         },
       ],
       stratagems: [
@@ -111,6 +113,7 @@ export const SAMPLE_ROSTER: Roster = {
           cond: 'Always on',
           effect: 'Halve incoming damage from melee attacks (round up).',
           source: 'Unit Ability',
+          category: 'datasheet',
         },
       ],
       stratagems: [
@@ -150,6 +153,7 @@ export const SAMPLE_ROSTER: Roster = {
           cond: 'Aura · attached unit',
           effect: '+1 Attack to melee weapons.',
           source: 'Unit Ability',
+          category: 'datasheet',
         },
       ],
       stratagems: [],
@@ -197,6 +201,7 @@ export const SAMPLE_ROSTER: Roster = {
           cond: 'Once per phase',
           effect: 'Selected enemy unit suffers -1 to its next save.',
           source: 'Unit Ability',
+          category: 'datasheet',
         },
       ],
       stratagems: [
@@ -238,6 +243,7 @@ export const SAMPLE_ROSTER: Roster = {
           cond: 'Visible target',
           effect: 'Friendly units ignore cover against the chosen target.',
           source: 'Unit Ability',
+          category: 'datasheet',
         },
       ],
       stratagems: [],

@@ -36,16 +36,23 @@ function isPlainInvulnSave(rule: { name: string }): boolean {
  * Find a plain "Invulnerable Save" ability and return its save digit
  * (e.g. "4" for a 4+ save). Null when no plain invuln-save ability exists
  * or its effect text doesn't parse to a 2+/3+/.../6+ value.
+ *
+ * Accepts any `{ name, effect }`-shaped list so it works on both the flat
+ * `Rule[]` and the structured `UnitAbility[]` the roster now carries.
  */
-export function findPlainInvulnSave(abilities: Rule[]): string | null {
+export function findPlainInvulnSave(abilities: readonly Pick<Rule, 'name' | 'effect'>[]): string | null {
   const a = abilities.find(isPlainInvulnSave)
   if (!a) return null
   const m = SAVE_DIGIT_RE.exec(a.effect)
   return m ? m[1] : null
 }
 
-/** Return a copy of `abilities` with any plain "Invulnerable Save" entry removed. */
-export function stripPlainInvulnSave(abilities: Rule[]): Rule[] {
+/**
+ * Return a copy of `abilities` with any plain "Invulnerable Save" entry removed.
+ * Generic over the element type so a `UnitAbility[]` keeps its richer shape
+ * (category / group) rather than being widened back to `Rule[]`.
+ */
+export function stripPlainInvulnSave<T extends Pick<Rule, 'name'>>(abilities: T[]): T[] {
   return abilities.filter(a => !isPlainInvulnSave(a))
 }
 

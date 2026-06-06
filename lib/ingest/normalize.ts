@@ -16,7 +16,8 @@ export {
 } from '../schemas'
 
 import { textOf, type Catalogue, type Profile } from '../parsers/bsdata'
-import { flagArmyRules } from './armyRules'
+import { ARMY_RULES, flagArmyRules } from './armyRules'
+import { norm } from '../roster/normalize'
 import type { ResolvedUnit } from './resolve'
 import {
   DATA_SCHEMA_VERSION,
@@ -25,6 +26,7 @@ import {
   type FactionArtifact,
   type GlossaryRule,
   type PreparedUnit,
+  type UnitAbility,
 } from '../schemas'
 import type { Stats, Weapon, Rule } from '../types'
 
@@ -74,6 +76,103 @@ function deriveRole(keywords: string[]): string {
   return ROLE_KEYWORDS.find((r) => keywords.includes(r)) ?? ''
 }
 
+/** The generic ability profile type. Anything else (and not GST-structural) is a themed group. */
+const GENERIC_ABILITY_TYPE = 'Abilities'
+
+/** Matches BSData's "Damaged: N-M wounds remaining" degrading-profile ability by name. */
+function isDamagedProfile(name: string): boolean {
+  return /^damaged:/i.test(name.trim())
+}
+
+/**
+ * Classify a unit's abilities into the printed-card taxonomy and preserve themed groups.
+ *
+ * Inputs are the two ability streams BSData exposes on a resolved unit:
+ *  - `unitRules` — rule info-links, each pre-tagged `core` when defined in the GST.
+ *  - `abilities` — ability *profiles*, each carrying its BSData `profileType` (`typeName`).
+ *
+ * Classification:
+ *  - **core**     — a `unitRule` with `core === true`.
+ *  - **faction**  — any ability (rule or profile) whose name matches the faction's army
+ *                   rule(s) in `ARMY_RULES`. Kept for fidelity; `buildRoster` drops it from
+ *                   per-unit rendering (it lives in the army-level section) — fixing the
+ *                   double-show where the army rule leaked onto every unit.
+ *  - **datasheet**— everything else.
+ *
+ * Themed groups: a profile whose `typeName` is neither the generic `Abilities` nor a
+ * GST-defined structural type (e.g. `Transport`) is a sub-ability of a themed group named
+ * by that type. A same-named generic ability, when present, is the group's parent and is
+ * folded into `groupBlurb` rather than rendered as its own chip.
+ *
+ * The separated "Damaged" profile is returned out-of-band so the caller can route it to
+ * `PreparedUnit.damaged`.
+ *
+ * De-dup mirrors the previous single-pass behaviour: the concatenated list (core → faction
+ * → datasheet) is keyed by `name|effect`, so an ability reachable via two paths — e.g.
+ * "Leader" as both a Core rule and a profile — collapses to one entry, keeping the
+ * earliest (best-classified) copy.
+ */
+function buildUnitAbilities(
+  u: ResolvedUnit,
+  factionName: string,
+  factionId: string,
+  gstProfileTypes: Set<string>,
+): { abilities: UnitAbility[]; damaged?: Rule } {
+  const armyRuleNames = new Set((ARMY_RULES[factionId] ?? []).map(norm))
+  const isFactionName = (name: string) => armyRuleNames.has(norm(name))
+  const isGroupType = (typeName: string) =>
+    typeName !== GENERIC_ABILITY_TYPE && !gstProfileTypes.has(typeName)
+
+  // Generic ("Abilities"-typed) profiles indexed by name → effect, so a themed group can
+  // borrow its same-named parent ability's text as the group blurb.
+  const parentBlurbs = new Map<string, string>()
+  for (const p of u.abilities) {
+    if (p.typeName === GENERIC_ABILITY_TYPE) {
+      parentBlurbs.set(norm(p.name), abilityFromProfile(p, factionName).effect)
+    }
+  }
+  // Names of the themed groups present on this unit — used to drop their parent ability
+  // from the flat list (it survives only as the group's blurb).
+  const groupNamesOnUnit = new Set(
+    u.abilities.filter((p) => isGroupType(p.typeName)).map((p) => norm(p.typeName)),
+  )
+
+  const core: UnitAbility[] = []
+  const faction: UnitAbility[] = []
+  const datasheet: UnitAbility[] = []
+  let damaged: Rule | undefined
+
+  // Core / faction / datasheet abilities sourced from rule info-links.
+  for (const { name, effect, core: isCore } of u.unitRules) {
+    const base = { name, timing: '', effect, source: factionName }
+    if (isFactionName(name)) faction.push({ ...base, category: 'faction' })
+    else if (isCore) core.push({ ...base, category: 'core' })
+    else datasheet.push({ ...base, category: 'datasheet' })
+  }
+
+  // Datasheet (and faction) abilities sourced from ability profiles.
+  for (const p of u.abilities) {
+    if (isDamagedProfile(p.name)) {
+      if (!damaged) damaged = abilityFromProfile(p, factionName)
+      continue
+    }
+    const base = abilityFromProfile(p, factionName)
+    if (isFactionName(p.name)) {
+      faction.push({ ...base, category: 'faction' })
+    } else if (isGroupType(p.typeName)) {
+      const blurb = parentBlurbs.get(norm(p.typeName))
+      datasheet.push({ ...base, category: 'datasheet', group: p.typeName, ...(blurb ? { groupBlurb: blurb } : {}) })
+    } else {
+      // Generic ability. Skip the ones that are only a themed group's parent blurb.
+      if (groupNamesOnUnit.has(norm(p.name))) continue
+      datasheet.push({ ...base, category: 'datasheet' })
+    }
+  }
+
+  const abilities = dedupeBy([...core, ...faction, ...datasheet], (a) => `${a.name}|${a.effect}`)
+  return { abilities, ...(damaged ? { damaged } : {}) }
+}
+
 /**
  * Dedupe by a content key, not just name — two distinct profiles can share a display
  * name (e.g. wargear reached via multiple option paths) yet differ in stats/effect, and
@@ -106,6 +205,7 @@ export function toFactionArtifact(
   factionId: string,
   factionKeywords: string[],
   detachments: Detachment[] = [],
+  gstProfileTypes: Set<string> = new Set(),
 ): FactionArtifact {
   const factionName = faction.name
   const glossaryMap = new Map<string, GlossaryRule>()
@@ -126,6 +226,10 @@ export function toFactionArtifact(
 
     const stats = u.statProfile ? statsFromProfile(u.statProfile) : undefined
 
+    // Classify abilities (core / faction / datasheet), preserve themed groups, and split
+    // out the Damaged profile (see buildUnitAbilities).
+    const { abilities, damaged } = buildUnitAbilities(u, factionName, factionId, gstProfileTypes)
+
     const unit: PreparedUnit = {
       id: u.bsId,
       bsId: u.bsId,
@@ -135,19 +239,14 @@ export function toFactionArtifact(
       tags: u.keywords,
       hot: [],
       weapons: dedupeBy(u.weapons.map(weaponFromProfile), (w) => `${w.kind}|${w.name}|${JSON.stringify(w.stats)}`),
-      abilities: dedupeBy(
-        [
-          ...u.abilities.map((p) => abilityFromProfile(p, factionName)),
-          ...u.unitRules.map(({ name, effect }) => ({ name, timing: '', effect, source: factionName })),
-        ],
-        (a) => `${a.name}|${a.effect}`,
-      ),
+      abilities,
       stratagems: [],
       reminders: [],
       keywords: u.keywords,
       ruleRefs: u.rules.map((r) => r.id),
     }
     if (stats && Object.keys(stats).length) unit.stats = stats
+    if (damaged) unit.damaged = damaged
     const points = u.points != null ? Number(u.points) : NaN
     if (!Number.isNaN(points)) unit.points = points
     return unit

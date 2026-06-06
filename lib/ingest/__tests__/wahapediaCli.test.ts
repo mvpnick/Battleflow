@@ -39,7 +39,7 @@ describe('tokensCompatible', () => {
 /** Minimal artifact fixture covering only the fields `mergeStratagems` touches. */
 function makeArtifact(detachments: FactionArtifact['detachments']): FactionArtifact {
   return {
-    schemaVersion: 1,
+    schemaVersion: 2,
     factionId: 'test-faction',
     factionName: 'Test Faction',
     bsCatalogueId: 'test-cat',

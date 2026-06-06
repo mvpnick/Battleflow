@@ -21,8 +21,14 @@ import { z } from 'zod'
 // Schema version
 // ---------------------------------------------------------------------------
 
-/** Version stamp embedded in every artifact. Increment when the shape changes. */
-export const DATA_SCHEMA_VERSION = 1 as const
+/**
+ * Version stamp embedded in every artifact. Increment when the shape changes.
+ *
+ * v2: datasheet abilities became structured ({@link UnitAbilitySchema}) — each carries a
+ * `category` (core / faction / datasheet) and optional themed-group label, and the
+ * Damaged profile is split into `PreparedUnit.damaged`. Requires a full re-ingest.
+ */
+export const DATA_SCHEMA_VERSION = 2 as const
 
 // ---------------------------------------------------------------------------
 // Phase IDs
@@ -95,6 +101,29 @@ export const StratSchema = RuleSchema.extend({
   summary: z.string().optional(),
 })
 
+/**
+ * A datasheet ability — a {@link RuleSchema} classified at ingest into the printed-card
+ * taxonomy and, where BSData models it, grouped under a themed sub-ability heading.
+ *
+ *  - `category`
+ *     - `core`     — an edition-wide ability defined in the GST (Deep Strike, Leader, …).
+ *     - `faction`  — the army rule (Oath of Moment, Synapse, …). Classified for fidelity
+ *                    but excluded from per-unit rendering — it lives in the army-level
+ *                    section (see `buildRoster`).
+ *     - `datasheet`— everything else: the unit's own bespoke abilities.
+ *  - `group` / `groupBlurb` — when an ability profile's BSData `profileType` is not the
+ *    generic `Abilities`, the type names a themed sub-group (Be'lakor "Shadow Form",
+ *    Magnus "Crimson King", the Silent King "Triarch Abilities"). `group` is that type
+ *    name; `groupBlurb` is the same-named parent ability's text when one exists.
+ */
+export const UnitAbilitySchema = RuleSchema.extend({
+  category: z.enum(['core', 'faction', 'datasheet']),
+  /** Themed sub-group label (the BSData profileType) when not the generic `Abilities`. */
+  group: z.string().optional(),
+  /** The group's introductory blurb, taken from a same-named parent ability if present. */
+  groupBlurb: z.string().optional(),
+})
+
 // ---------------------------------------------------------------------------
 // Compound schemas
 // ---------------------------------------------------------------------------
@@ -130,7 +159,8 @@ export const PreparedUnitSchema = z.object({
   tags: z.array(z.string()),
   hot: z.array(z.string()),
   weapons: z.array(WeaponSchema),
-  abilities: z.array(RuleSchema),
+  /** Structured datasheet abilities — classified and grouped (see {@link UnitAbilitySchema}). */
+  abilities: z.array(UnitAbilitySchema),
   stratagems: z.array(StratSchema),
   reminders: z.array(z.object({ text: z.string() })),
   /** BSData UUID — stable cross-reference key, also used as the unit's unique `id`. */
@@ -145,6 +175,12 @@ export const PreparedUnitSchema = z.object({
   ruleRefs: z.array(z.string()),
   /** Phases this unit is relevant in (deferred — see AGENTS.md). */
   phases: z.array(z.enum(PHASE_IDS)).optional(),
+  /**
+   * The unit's "Damaged: N-M wounds remaining" profile, carved out of the ability stream
+   * at ingest. Promoted to its own row in the Phase 2 UI; until then `buildRoster` folds
+   * it back into the flat ability list so it stays visible.
+   */
+  damaged: RuleSchema.optional(),
 })
 
 /** One faction detachment with its rules and stratagems. */
@@ -249,6 +285,7 @@ export type Stats = z.infer<typeof StatsSchema>
 export type Modifier = z.infer<typeof ModifierSchema>
 export type Weapon = z.infer<typeof WeaponSchema>
 export type Rule = z.infer<typeof RuleSchema>
+export type UnitAbility = z.infer<typeof UnitAbilitySchema>
 export type Strat = z.infer<typeof StratSchema>
 export type GlossaryRule = z.infer<typeof GlossaryRuleSchema>
 
