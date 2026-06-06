@@ -538,6 +538,16 @@ export function UnitPhaseSection({ unit, count, open, phase, onToggle, onOpenDet
                 <div className={styles.itemList}>
                   {full.abilities.map((r, i) => (
                     <div key={`${r.name}-${i}`} className={i > 0 ? styles.itemSep : undefined}>
+                      {/* Themed-group intro blurb rides on the group's first child
+                          (see normalize.buildUnitAbilities) — render it as a heading
+                          above that ability so the expanded view keeps the group's
+                          context, not just its bare members. */}
+                      {r.group && r.groupBlurb && (
+                        <div className={styles.fullGroupHead}>
+                          <span className={styles.fullGroupName}>{r.group}</span>
+                          <p className={styles.fullGroupBlurb}>{r.groupBlurb}</p>
+                        </div>
+                      )}
                       <RuleItem rule={r} unit={unit} onOpen={onOpenDetail} />
                     </div>
                   ))}

@@ -25,8 +25,8 @@
         "Legiones Daemonica"
       ],
       "artifact": "/data/factions/chaos-daemons.json",
-      "bytes": 512013,
-      "sha256": "38c338cde842af1069dce1030e177b99e9879dd877b35e804d3db157d62e3d8c",
+      "bytes": 511723,
+      "sha256": "3d15c3a9ec79089e65dfeeab1cfdbe7540a187c5269eaa0afb45879f9f85b680",
       "unitCount": 73
     },
     {
@@ -60,8 +60,8 @@
         "Legiones Daemonica"
       ],
       "artifact": "/data/factions/death-guard.json",
-      "bytes": 445491,
-      "sha256": "3d731361ad6c5745818e9c2d1189e586392366b4254e5c13f82c3f66d8782019",
+      "bytes": 445303,
+      "sha256": "6a174ac5a50f43bd749125b1659ce42ea4d2ae1de633c957c86769f71c1e8243",
       "unitCount": 82
     },
     {
@@ -108,8 +108,8 @@
         "Legiones Daemonica"
       ],
       "artifact": "/data/factions/world-eaters.json",
-      "bytes": 374091,
-      "sha256": "06421f8bb7f7de3367dc486ca959105b3da19fed68a1d22e506c67fe354199ae",
+      "bytes": 373775,
+      "sha256": "f42e23c5cbb228fb5dbc96a962e21b16f719d50ae4955518607362e243f957ea",
       "unitCount": 69
     },
     {
@@ -155,8 +155,8 @@
         "Adeptus Astartes"
       ],
       "artifact": "/data/factions/dark-angels.json",
-      "bytes": 1036797,
-      "sha256": "580d0abb78d812470701c250ea3f07cd3ec5e66bbd005687f222cc644bbb42eb",
+      "bytes": 1036441,
+      "sha256": "1142d219d3b876d49633bfad9772c203bc668e1bf98739cbb94dbea5ff415a8f",
       "unitCount": 187
     },
     {
@@ -316,8 +316,8 @@
         "Astra Militarum"
       ],
       "artifact": "/data/factions/astra-militarum.json",
-      "bytes": 516026,
-      "sha256": "e70cf49489fb712a7f76c67126e2a71a5d3dcf8c09f7e2c3cb14b27049189cd7",
+      "bytes": 515658,
+      "sha256": "6c7bcacf598c2af8c5cf40694152422d3de9570a741d410f7156d5e4017ec3fd",
       "unitCount": 125
     },
     {
@@ -410,8 +410,8 @@
         "Orks"
       ],
       "artifact": "/data/factions/orks.json",
-      "bytes": 401731,
-      "sha256": "1b2460c21bafebbb69f3aae8ee2ef42c8a5814742f843baa16f403fe559b5213",
+      "bytes": 401357,
+      "sha256": "49d421ba8d764e0d0d9b574ca7415af205077335a5b150e82a9296671a5f17de",
       "unitCount": 91
     },
     {

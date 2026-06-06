@@ -36,11 +36,13 @@ describe('Be’lakor (Chaos Daemons)', () => {
     expect(names(u, 'datasheet')).not.toContain('The Shadow of Chaos')
   })
 
-  it('preserves the "Shadow Form" themed group with its parent blurb', () => {
+  it('preserves the "Shadow Form" themed group with its parent blurb (stored once)', () => {
     const grouped = u.abilities.filter((a) => a.group === 'Shadow Form')
     expect(grouped.length).toBeGreaterThanOrEqual(3)
     expect(grouped.every((a) => a.category === 'datasheet')).toBe(true)
-    expect(grouped.every((a) => !!a.groupBlurb)).toBe(true)
+    // The blurb rides on the group's first child only — not repeated on every member.
+    expect(grouped.filter((a) => a.groupBlurb !== undefined)).toHaveLength(1)
+    expect(grouped[0].groupBlurb).toBeTruthy()
   })
 
   it('separates the Damaged profile out of the ability stream', () => {

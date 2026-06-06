@@ -377,6 +377,30 @@
   border-top: 1px solid var(--border-faint);
 }
 
+/* Themed-group heading in the expanded datasheet view — the group name plus its
+   intro blurb, shown once above the group's first member ability. */
+.fullGroupHead {
+  padding: 10px 14px 4px;
+}
+
+.fullGroupName {
+  display: block;
+  font-family: var(--f-ui);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--fg-dim);
+}
+
+.fullGroupBlurb {
+  margin: 4px 0 0;
+  font-family: var(--f-ui);
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--fg-mute);
+}
+
 .reminder {
   display: flex;
   gap: 8px;

@@ -51,24 +51,20 @@ export function collectCrusadeIds(gst: BsNode): Set<string> {
  * already dropped upstream by `isWeaponScopedAbility` / `isWeaponKeywordText`, so the
  * remaining unit rule info-links whose target is in this set are exactly the Core ones.)
  *
- * Walks the subtree like {@link collectCrusadeIds} so any nested rule nodes are caught,
- * not just the top-level `sharedRules.rule` entries.
+ * Descends only through rule containers (`sharedRules.rule` / `rules.rule`) so nested rule
+ * nodes are caught while the modifiers, conditions and profiles hanging off a rule — which
+ * also carry ids — are not, keeping the set to genuine rule ids (its name's contract).
  */
 export function collectGstRuleIds(gst: BsNode): Set<string> {
   const ids = new Set<string>()
-  const rules: BsNode[] = [].concat(gst.sharedRules?.rule ?? [])
-  const stack: BsNode[] = [...rules]
+  const stack: BsNode[] = [].concat(gst.sharedRules?.rule ?? [])
   while (stack.length) {
-    const node = stack.pop()!
-    if (!node || typeof node !== 'object') continue
-    if (typeof node.id === 'string') ids.add(node.id)
-    for (const [key, val] of Object.entries(node)) {
-      if (key === 'id' || key === '#text') continue
-      if (Array.isArray(val)) {
-        for (const c of val) if (c && typeof c === 'object') stack.push(c)
-      } else if (val && typeof val === 'object') {
-        stack.push(val)
-      }
+    const rule = stack.pop()!
+    if (!rule || typeof rule !== 'object') continue
+    if (typeof rule.id === 'string') ids.add(rule.id)
+    // A rule may carry nested rules of its own; follow only those, not arbitrary children.
+    for (const nested of [].concat(rule.sharedRules?.rule ?? [], rule.rules?.rule ?? [])) {
+      if (nested && typeof nested === 'object') stack.push(nested)
     }
   }
   return ids

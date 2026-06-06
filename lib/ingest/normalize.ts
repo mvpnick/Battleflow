@@ -136,6 +136,9 @@ function buildUnitAbilities(
   const groupNamesOnUnit = new Set(
     u.abilities.filter((p) => isGroupType(p.typeName)).map((p) => norm(p.typeName)),
   )
+  // Groups whose blurb has already been attached — the blurb rides on each group's first
+  // child only (not repeated on every member), so the artifact stores it once.
+  const blurbedGroups = new Set<string>()
 
   const core: UnitAbility[] = []
   const faction: UnitAbility[] = []
@@ -160,7 +163,9 @@ function buildUnitAbilities(
     if (isFactionName(p.name)) {
       faction.push({ ...base, category: 'faction' })
     } else if (isGroupType(p.typeName)) {
-      const blurb = parentBlurbs.get(norm(p.typeName))
+      const key = norm(p.typeName)
+      const blurb = blurbedGroups.has(key) ? undefined : parentBlurbs.get(key)
+      if (blurb) blurbedGroups.add(key)
       datasheet.push({ ...base, category: 'datasheet', group: p.typeName, ...(blurb ? { groupBlurb: blurb } : {}) })
     } else {
       // Generic ability. Skip the ones that are only a themed group's parent blurb.

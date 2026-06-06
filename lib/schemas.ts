@@ -120,7 +120,11 @@ export const UnitAbilitySchema = RuleSchema.extend({
   category: z.enum(['core', 'faction', 'datasheet']),
   /** Themed sub-group label (the BSData profileType) when not the generic `Abilities`. */
   group: z.string().optional(),
-  /** The group's introductory blurb, taken from a same-named parent ability if present. */
+  /**
+   * The group's introductory blurb, taken from a same-named parent ability if present.
+   * Stored on the group's first child only (not repeated on every member); consumers
+   * read it from there.
+   */
   groupBlurb: z.string().optional(),
 })
 
