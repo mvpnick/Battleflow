@@ -295,6 +295,13 @@ function CompactWeaponRow({
     >
       <span className={styles.weaponName}>{displayName}</span>
       <StatRow stats={weapon.stats} />
+      {weapon.tags.length > 0 && (
+        <div className={styles.weaponTags}>
+          {weapon.tags.map(t => (
+            <span key={t} className={styles.weaponTag}>{t}</span>
+          ))}
+        </div>
+      )}
     </button>
   )
 }
