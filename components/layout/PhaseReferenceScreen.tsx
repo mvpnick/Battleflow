@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { PhaseId, DrawerPayload, Roster, Rule, Strat, Unit } from '@/lib/types'
+import { PhaseId, DrawerPayload, GlossaryRule, Roster, Strat, Unit } from '@/lib/types'
 import { PHASES, SAMPLE_ROSTER, SAMPLE_STRATAGEMS } from '@/lib/sampleData'
 import { stratagemMatchesPhase, stratagemNamesPhase } from '@/lib/stratagems'
 import { TopBar } from './TopBar'
@@ -43,9 +43,9 @@ interface Props {
   cp?: number
   cpMax?: number
   /** The faction's army rule(s) — surfaced in the persistent Rules section. Undefined in demo mode. */
-  armyRules?: Rule[]
+  armyRules?: GlossaryRule[]
   /** Rules of the matched detachment; empty when no detachment matched. */
-  detachmentRules?: Rule[]
+  detachmentRules?: GlossaryRule[]
   /** Whether the roster's detachment resolved to a known one (drives the fallback note). */
   detachmentMatched?: boolean
   onBack?: () => void

@@ -86,8 +86,8 @@
         "Legiones Daemonica"
       ],
       "artifact": "/data/factions/thousand-sons.json",
-      "bytes": 381663,
-      "sha256": "9c35c70fa0613dac4f9fd5a494d9d7aa6d52d1a79c118328ac3a4daefabdbed6",
+      "bytes": 383623,
+      "sha256": "b135d00bbbc59050a6b07d48d889c589d60d975af626b4d68f5f6570a5b7977b",
       "unitCount": 73
     },
     {
@@ -108,8 +108,8 @@
         "Legiones Daemonica"
       ],
       "artifact": "/data/factions/world-eaters.json",
-      "bytes": 373775,
-      "sha256": "f42e23c5cbb228fb5dbc96a962e21b16f719d50ae4955518607362e243f957ea",
+      "bytes": 376850,
+      "sha256": "79c232cfb8f5f8de7b8e516d35a78a37427ed49fce029363797bf935f8aac9fe",
       "unitCount": 69
     },
     {

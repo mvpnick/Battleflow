@@ -133,6 +133,22 @@ export const UnitAbilitySchema = RuleSchema.extend({
 // ---------------------------------------------------------------------------
 
 /**
+ * A named entry in a faction-wide reference table that an army rule points players at
+ * (Thousand Sons' Cabal Rituals, World Eaters' Blessings of Khorne). BSData models these
+ * tables as a standalone `selectionEntry`'s `<profile>` children, each with a themed
+ * "requirement" characteristic (Warp Charge cost / dice roll) plus an `Effect` — no `Unit`
+ * profile, so they never reach a unit, detachment, or glossary on their own.
+ * `requirementLabel` carries the source characteristic's name ("Warp Charge" / "Roll") so
+ * the UI can render either faction's vocabulary without hardcoding it.
+ */
+export const ArmyRuleOptionSchema = z.object({
+  name: z.string(),
+  requirement: z.string(),
+  requirementLabel: z.string(),
+  effect: z.string(),
+})
+
+/**
  * A shared ability/rule deduped into the faction-level glossary.
  * The `id` is a BSData UUID — the stable lookup key.
  */
@@ -145,6 +161,12 @@ export const GlossaryRuleSchema = RuleSchema.extend({
    * The entry stays in `glossary` for existing unit cross-refs — this only tags it.
    */
   armyRule: z.boolean().optional(),
+  /**
+   * The named table an army rule references (Rituals / Blessings of Khorne), extracted
+   * at ingest from a curated per-faction allowlist (`lib/ingest/armyRuleOptions.ts`).
+   * Present only on the two army rules that point to such a table.
+   */
+  options: z.array(ArmyRuleOptionSchema).optional(),
 })
 
 /**
@@ -291,6 +313,7 @@ export type Weapon = z.infer<typeof WeaponSchema>
 export type Rule = z.infer<typeof RuleSchema>
 export type UnitAbility = z.infer<typeof UnitAbilitySchema>
 export type Strat = z.infer<typeof StratSchema>
+export type ArmyRuleOption = z.infer<typeof ArmyRuleOptionSchema>
 export type GlossaryRule = z.infer<typeof GlossaryRuleSchema>
 
 /**

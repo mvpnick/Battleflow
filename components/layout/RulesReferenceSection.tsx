@@ -1,14 +1,19 @@
 'use client'
 
 import { useState } from 'react'
-import { Rule } from '@/lib/types'
+import { GlossaryRule } from '@/lib/types'
 import styles from './RulesReferenceSection.module.css'
 
 interface Props {
-  /** The faction's army rule(s) (e.g. Oath of Moment), flagged in the glossary at ingest. */
-  armyRules: Rule[]
+  /**
+   * The faction's army rule(s) (e.g. Oath of Moment), flagged in the glossary at ingest.
+   * `GlossaryRule` (rather than the bare `Rule`) so cards can surface `options` — the
+   * Cabal Rituals / Blessings of Khorne reference tables Thousand Sons / World Eaters
+   * point players at (see `lib/ingest/armyRuleOptions.ts`).
+   */
+  armyRules: GlossaryRule[]
   /** Rules of the roster's matched detachment; empty when no detachment matched. */
-  detachmentRules: Rule[]
+  detachmentRules: GlossaryRule[]
   /** Whether the roster's detachment resolved to a known one (controls the fallback note). */
   detachmentMatched: boolean
 }
@@ -45,7 +50,7 @@ export function RulesReferenceSection({ armyRules, detachmentRules, detachmentMa
 
   // Group label keeps the two rule kinds distinct; the rule name alone can collide across
   // groups, so the open-state key is namespaced by group.
-  function renderGroup(label: string, rules: Rule[]) {
+  function renderGroup(label: string, rules: GlossaryRule[]) {
     if (rules.length === 0) return null
     return (
       <div className={styles.group}>
@@ -65,6 +70,23 @@ export function RulesReferenceSection({ armyRules, detachmentRules, detachmentMa
                   <span className={styles.expand}>{isOpen ? '−' : '+'}</span>
                 </div>
                 {isOpen && <p className={styles.effect}>{rule.effect}</p>}
+                {/* Reference table the army rule points players at (Cabal Rituals /
+                    Blessings of Khorne) — opens and closes with the parent card. */}
+                {isOpen && rule.options && rule.options.length > 0 && (
+                  <ul className={styles.options}>
+                    {rule.options.map(option => (
+                      <li key={option.name} className={styles.option}>
+                        <div className={styles.optionTop}>
+                          <span className={styles.optionName}>{option.name}</span>
+                          <span className={styles.requirement}>
+                            {option.requirementLabel}: {option.requirement}
+                          </span>
+                        </div>
+                        <p className={styles.optionEffect}>{option.effect}</p>
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </button>
             </div>
           )

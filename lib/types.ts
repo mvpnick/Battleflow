@@ -12,8 +12,8 @@
 
 // Leaf types governed by Zod schemas — imported so we can use them locally and
 // re-exported so UI consumers keep `import ... from '@/lib/types'` unchanged.
-import type { Stats, Modifier, Weapon, Rule, UnitAbility, Strat } from './schemas'
-export type { Stats, Modifier, Weapon, Rule, UnitAbility, Strat }
+import type { Stats, Modifier, Weapon, Rule, UnitAbility, Strat, GlossaryRule } from './schemas'
+export type { Stats, Modifier, Weapon, Rule, UnitAbility, Strat, GlossaryRule }
 
 // ---------------------------------------------------------------------------
 // Phase types

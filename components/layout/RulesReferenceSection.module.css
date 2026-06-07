@@ -135,6 +135,60 @@
   white-space: pre-wrap;
 }
 
+/* Nested reference table (Cabal Rituals / Blessings of Khorne) under an army-rule
+   card's effect text — same card surface, no new section chrome. */
+.options {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 2px 0 0;
+  padding: 8px 0 0 2px;
+  border-top: 1px dashed var(--border-faint);
+  list-style: none;
+}
+
+.option {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.optionTop {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.optionName {
+  font-size: var(--t-sm);
+  font-weight: 600;
+  color: var(--fg);
+  letter-spacing: -0.01em;
+}
+
+.requirement {
+  font-family: var(--f-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--signal);
+  background: var(--signal-dim);
+  border: 1px solid var(--signal-line);
+  border-radius: 10px;
+  padding: 1px 7px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.optionEffect {
+  font-size: var(--t-sm);
+  color: var(--fg-soft);
+  line-height: 1.5;
+  margin: 0;
+  white-space: pre-wrap;
+}
+
 .note {
   font-size: var(--t-sm);
   color: var(--fg-mute);

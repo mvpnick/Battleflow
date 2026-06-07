@@ -17,6 +17,7 @@ export {
 
 import { textOf, type Catalogue, type Profile } from '../parsers/bsdata'
 import { ARMY_RULES, flagArmyRules } from './armyRules'
+import { attachArmyRuleOptions } from './armyRuleOptions'
 import { norm } from '../roster/normalize'
 import type { ResolvedUnit } from './resolve'
 import {
@@ -271,6 +272,11 @@ export function toFactionArtifact(
   // Tag the faction's army rule(s) in the glossary from the curated allowlist, so
   // future ingests carry the flag automatically (see lib/ingest/armyRules.ts).
   flagArmyRules(artifact)
+
+  // Attach any faction-wide reference table (Rituals / Blessings of Khorne) an army rule
+  // points players at — extracted from a standalone selectionEntry that enumerateUnits
+  // never walks (see lib/ingest/armyRuleOptions.ts).
+  attachArmyRuleOptions(artifact, faction)
 
   // Parse validates the artifact shape and strips any unknown fields.
   return FactionArtifactSchema.parse(artifact) as FactionArtifact
