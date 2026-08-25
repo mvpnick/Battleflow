@@ -6,7 +6,7 @@ import type { ParsedArmy } from '../parseGwText'
 /** Minimal artifact fixture — only the fields buildRoster touches. */
 function makeArtifact(overrides: Partial<FactionArtifact> = {}): FactionArtifact {
   return {
-    schemaVersion: 2,
+    schemaVersion: 3,
     factionId: 'chaos-daemons',
     factionName: 'Chaos Daemons',
     bsCatalogueId: 'test-cat-id',
@@ -306,7 +306,7 @@ describe('buildRoster – unit matching', () => {
 describe('buildRoster – enhancement resolution', () => {
   function makeArtifactWithEnhancements(): FactionArtifact {
     return {
-      schemaVersion: 2,
+      schemaVersion: 3,
       factionId: 'chaos-daemons',
       factionName: 'Chaos Daemons',
       bsCatalogueId: 'test-cat-id',
@@ -379,7 +379,7 @@ describe('buildRoster – enhancement resolution', () => {
   // wouldn't resolve to a Rule and would leak into `hot[]`.
   it('matches enhancements across curly vs straight apostrophes', () => {
     const artifact: FactionArtifact = {
-      schemaVersion: 2,
+      schemaVersion: 3,
       factionId: 'chaos-daemons',
       factionName: 'Chaos Daemons',
       bsCatalogueId: 'test-cat-id',

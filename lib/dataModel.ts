@@ -18,6 +18,7 @@ export type {
    * the name keeps `ingest/detachments.ts` readable.
    */
   DetachmentRule,
+  Enhancement,
   PreparedUnit,
   Detachment,
   FactionArtifact,
@@ -26,3 +27,5 @@ export type {
   ManifestSharedDetachments,
   DataManifest,
 } from './schemas'
+
+export { FORCE_DISPOSITIONS } from './schemas'

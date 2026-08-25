@@ -1,7 +1,15 @@
 /**
- * Universal stratagems available to every army in Warhammer 40,000 10th edition.
- * Maintained manually — BSData does not model stratagems as machine-readable profiles.
- * Source: Core Rules (Leviathan edition, updated for 10.6).
+ * Universal stratagems available to every army in Warhammer 40,000 11th edition.
+ * Maintained manually — BSData does not model stratagems as machine-readable profiles, and
+ * these are excluded from Wahapedia's per-faction scrape (`SKIP_GROUPS` in `wahapediaCli.ts`),
+ * so there's no automated source for them either.
+ *
+ * Re-authored 2026-08-25 against the live Core Rules page (wahapedia.ru/wh40k11ed/the-rules/
+ * core-rules/, numbered 15.02–15.12) for the 11e cutover — the whole list changed from 10e:
+ * Desperate Breakout, Go to Ground, Grenade, and Tank Shock are gone; Epic Challenge,
+ * Explosives, and Crushing Impact are new; Fire Overwatch and Heroic Intervention now trigger
+ * at the end of a phase rather than reactively mid-phase. "Snap Shooting" (15.09) is a
+ * referenced rules mechanic, not a purchasable stratagem, and is intentionally not listed here.
  */
 import type { Strat } from '../types'
 
@@ -11,108 +19,98 @@ export const CORE_STRATAGEMS: Strat[] = [
     cp: 1,
     timing: 'Any phase',
     effect:
-      'WHEN: In any phase, just after you have made a Hit roll, a Wound roll, a Damage roll, a Saving Throw, an Advance roll or a Charge roll for a unit in your army.\nEFFECT: Re-roll that roll.',
-    summary: 'Re-roll any single dice result immediately after making it.',
+      'WHEN: In any phase, just after you make an Advance, Charge, Damage, Hazard, Hit, Save or Wound roll (or a roll to determine the number of attacks made with a weapon) for a friendly unit or model.\nEFFECT: Re-roll that roll. If more than one dice were rolled together, select one of them to re-roll — except a Charge roll, which must be re-rolled in full.',
+    summary: 'Re-roll any single dice result immediately after making it; Charge rolls reroll in full.',
     source: 'Core Rules',
     once: false,
   },
   {
-    name: 'Counter-offensive',
-    cp: 2,
+    name: 'Epic Challenge',
+    cp: 1,
     timing: 'Fight phase',
     effect:
-      'WHEN: In the Fight phase, after an enemy unit has fought.\nEFFECT: Select one unit from your army that is within Engagement Range of one or more enemy units and that has not already been selected to fight this phase. That unit fights next.',
-    summary: 'A friendly unit fights immediately after an enemy unit fights.',
-    source: 'Core Rules',
-    once: false,
-  },
-  {
-    name: 'Desperate Breakout',
-    cp: 2,
-    timing: 'Movement phase',
-    effect:
-      'WHEN: In your Movement phase, when a unit from your army that is within Engagement Range of one or more enemy units is selected to move.\nEFFECT: That unit can attempt to Fall Back, and when doing so its models can move through models from enemy units. If it does, after it moves, roll one D6 for each model in that unit: for each result of 1, one model in that unit is destroyed (your choice). That unit can then act normally this turn.',
-    summary: 'Fall back through enemy models, then act normally this turn.',
-    source: 'Core Rules',
-    once: false,
-  },
-  {
-    name: 'Fire Overwatch',
-    cp: 1,
-    timing: 'Charge phase',
-    effect:
-      'WHEN: In your opponent\'s Charge phase, when an enemy unit declares a charge.\nEFFECT: One unit from your army that is within 24" of that enemy unit can shoot at it as if it were your Shooting phase. Each model may only shoot with one weapon, and if it has the [TORRENT] ability it can shoot even if it Advanced.',
-    summary: 'Shoot at an enemy unit as it charges.',
-    source: 'Core Rules',
-    once: false,
-  },
-  {
-    name: 'Go to Ground',
-    cp: 1,
-    timing: 'Any phase',
-    effect:
-      'WHEN: In any phase, just after an enemy unit has selected its targets.\nEFFECT: Select one INFANTRY unit from your army that was selected as a target. Until the end of the phase, all models in that unit have a 6+ invulnerable save and the Benefit of Cover.',
-    summary: 'Give an Infantry unit a 6+ invulnerable save and cover against this attack.',
-    source: 'Core Rules',
-    once: false,
-  },
-  {
-    name: 'Grenade',
-    cp: 1,
-    timing: 'Shooting phase',
-    effect:
-      'WHEN: In your Shooting phase.\nEFFECT: Select one unit from your army that has not been selected to shoot this phase, and select one GRENADE weapon that model is equipped with. That unit can shoot that weapon this phase, even if it Advanced or Fell Back this turn, but it can only make one attack with that weapon, and you can only use this Stratagem once per turn.',
-    summary: 'Shoot a grenade even after Advancing or Falling Back.',
-    source: 'Core Rules',
-    once: 'phase',
-  },
-  {
-    name: 'Heroic Intervention',
-    cp: 1,
-    timing: 'Charge phase',
-    effect:
-      'WHEN: In your opponent\'s Charge phase, after the enemy has resolved all charge moves.\nEFFECT: Select one unit from your army that is not within Engagement Range of any enemy units. That unit can move up to 3".',
-    summary: 'Move a unit up to 3" to intercept a charge.',
+      'WHEN: In the Fight phase, just after a friendly Character unit is selected to fight.\nEFFECT: Select one Character model in that unit. Until the end of the phase, that model’s melee weapons have the [PRECISION] ability.',
+    summary: 'Give one Character model’s melee weapons the Precision ability for the phase.',
     source: 'Core Rules',
     once: false,
   },
   {
     name: 'Insane Bravery',
     cp: 1,
-    timing: 'Battleshock phase',
+    timing: 'Battle-shock step',
     effect:
-      'WHEN: In the Battleshock phase, just after a Battle-shock test has been failed for a unit from your army.\nEFFECT: That unit is no longer Battle-shocked. You can only use this Stratagem once per battle.',
-    summary: 'Remove Battle-shocked status from a friendly unit.',
+      'WHEN: In the Battle-shock step of your Command phase, just before you make a Battle-shock test for a friendly unit.\nEFFECT: That Battle-shock test is automatically successful.\nRESTRICTIONS: You cannot use this Stratagem more than once per battle.',
+    summary: 'Automatically pass a Battle-shock test.',
     source: 'Core Rules',
     once: 'battle',
+  },
+  {
+    name: 'Explosives',
+    cp: 1,
+    timing: 'Shooting phase',
+    effect:
+      'WHEN: Your Shooting phase.\nEFFECT: Select one unengaged Explosives/Grenades unit from your army that is eligible to shoot and did not make an Advance move this turn, then select one Explosives/Grenades model in that unit and one unengaged, visible enemy unit within 8" of it. Roll six D6: for each result of 4+, that enemy unit suffers 1 mortal wound.',
+    summary: 'Roll 6D6 at a visible enemy within 8" — each 4+ deals 1 mortal wound.',
+    source: 'Core Rules',
+    once: false,
+  },
+  {
+    name: 'Crushing Impact',
+    cp: 1,
+    timing: 'Charge phase',
+    effect:
+      'WHEN: Your Charge phase, just after a friendly Monster/Vehicle unit ends a Charge move.\nEFFECT: Select one enemy unit engaged with that unit and one model in your unit engaged with it. Roll a number of D6 equal to that model’s Toughness characteristic: for each result of 1, your unit suffers 1 mortal wound; for each result of 5+, the enemy unit suffers 1 mortal wound (to a maximum of 6 mortal wounds).',
+    summary: 'A charging Monster/Vehicle rolls D6 equal to its Toughness — 5+ deals a mortal wound to the enemy, 1s hurt your own unit.',
+    source: 'Core Rules',
+    once: false,
   },
   {
     name: 'Rapid Ingress',
     cp: 1,
     timing: 'Movement phase',
     effect:
-      'WHEN: In your opponent\'s Movement phase, after your opponent has finished making all moves.\nEFFECT: Select one unit from your army that is in Reserves. That unit can arrive on the battlefield as if it were the Reinforcements step of your Movement phase.',
-    summary: 'Deploy a Reserves unit at the end of your opponent\'s Movement phase.',
+      'WHEN: End of your opponent’s Movement phase.\nEFFECT: Select one friendly unit in Strategic Reserves (excluding Aircraft). That unit makes an ingress move.\nRESTRICTIONS: You cannot use this Stratagem during the first battle round.',
+    summary: 'Bring a Reserves unit onto the battlefield at the end of your opponent’s Movement phase.',
+    source: 'Core Rules',
+    once: false,
+  },
+  {
+    name: 'Fire Overwatch',
+    cp: 1,
+    timing: 'Movement phase',
+    effect:
+      'WHEN: End of your opponent’s Movement phase.\nEFFECT: Select one friendly unengaged unit (excluding Titanic units). That unit shoots using snap shooting (hits only on an unmodified 6, no re-rolls, one visible target within 24").',
+    summary: 'Shoot at an enemy at reduced accuracy at the end of your opponent’s Movement phase.',
     source: 'Core Rules',
     once: false,
   },
   {
     name: 'Smokescreen',
     cp: 1,
-    timing: 'Any phase',
+    timing: 'Shooting phase',
     effect:
-      'WHEN: In any phase, just after an enemy unit has selected its targets.\nEFFECT: Select one SMOKE unit from your army that was selected as a target. Until the end of the phase, all models in that unit have the Benefit of Cover and the Stealth ability.',
-    summary: 'Give a Smoke unit cover and Stealth against the current attacker.',
+      'WHEN: Start of your opponent’s Shooting phase.\nEFFECT: Select one friendly Smoke unit. Until the end of the phase, any attack that targets that unit — or a unit not fully visible to the attacker because of it — gives the target the benefit of cover.',
+    summary: 'Give a Smoke unit (and anything it obscures) the benefit of cover for the phase.',
     source: 'Core Rules',
     once: false,
   },
   {
-    name: 'Tank Shock',
+    name: 'Heroic Intervention',
     cp: 1,
     timing: 'Charge phase',
     effect:
-      'WHEN: In your Charge phase, after a VEHICLE unit from your army ends a Charge move.\nEFFECT: Select one enemy unit within Engagement Range of that VEHICLE. Roll a number of D6 equal to that VEHICLE unit\'s current Toughness characteristic; for each result that equals or exceeds that enemy unit\'s current Toughness, it suffers 1 mortal wound (to a maximum of 6 mortal wounds).',
-    summary: 'Roll dice equal to your Vehicle\'s Toughness after charging — each roll ≥ enemy T deals 1 MW.',
+      'WHEN: End of your opponent’s Charge phase.\nEFFECT: Select one friendly unengaged unit within 12" of one or more enemy units (a Vehicle may only be selected if it is a Character or Walker) and resolve a charge with it. Before making the charge roll, choose one mode: Leap to Defend (targets are limited to enemy units that made a charge move this phase); or, for +1CP, Into the Fray (charge rolls greater than 6 count as 6, and you may target any enemy unit within 6" and the maximum distance).',
+    summary: 'Charge in reaction to an enemy charge; pay +1CP for a longer, more reliable intercept.',
+    source: 'Core Rules',
+    once: false,
+  },
+  {
+    name: 'Counteroffensive',
+    cp: 2,
+    timing: 'Fight phase',
+    effect:
+      'WHEN: Fight step of your opponent’s Fight phase, just after an enemy unit has resolved its attacks.\nEFFECT: Select one friendly unit that is eligible to fight. Until the end of the phase, that unit has the Fights First ability and must be the next unit selected to fight.',
+    summary: 'A friendly unit fights next, with Fights First, right after an enemy unit finishes fighting.',
     source: 'Core Rules',
     once: false,
   },

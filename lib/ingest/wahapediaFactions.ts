@@ -1,12 +1,13 @@
 /**
  * Maps Battleflow faction IDs (our `public/data/factions/<id>.json` slugs, derived from
  * BSData catalogue names) to the slug used in a Wahapedia faction URL
- * (`https://wahapedia.ru/wh40k10ed/factions/<slug>/`).
+ * (`https://wahapedia.ru/wh40k11ed/factions/<slug>/`).
  *
  * `null` marks a faction with no Wahapedia stratagem source — it is skipped during ingest.
  *
  * Two structural quirks of Wahapedia drive the non-identity mappings (all verified by live
- * HEAD request, May 2026):
+ * HEAD request, 2026-08-25, against the 11e nav — `emperor-s-children` is a new identity
+ * mapping this edition; `ynnari` is gone, matching its BSData catalogue's removal):
  *
  * 1. Renamed factions — Wahapedia uses different slugs than BSData for a few armies
  *    (`craftworlds → aeldari`, `agents-of-the-imperium → imperial-agents`).
@@ -14,8 +15,11 @@
  * 2. Space Marine chapters share ONE page — Wahapedia has no per-chapter pages; every
  *    chapter's detachments (Blood Angels, Dark Angels, Black Templars, Deathwatch, Space
  *    Wolves, and the codex-compliant Divisio chapters) live on the single `space-marines`
- *    page. We therefore point all chapter IDs at `space-marines`. Because ingest now scopes
- *    each chapter artifact to just its own detachments (the generic Codex set + that chapter's
+ *    page, gated behind a client-side "supplement" filter whose default (no trailing slash,
+ *    or an explicit chapter code) hides every chapter but that one — `fetchFactionPage`'s
+ *    trailing-slash URL is what selects the unfiltered "every chapter" view (confirmed live).
+ *    We therefore point all chapter IDs at `space-marines`. Because ingest now scopes each
+ *    chapter artifact to just its own detachments (the generic Codex set + that chapter's
  *    gated ones), the merge fills stratagems for the groups a chapter actually carries and
  *    SUPPRESSES shell synthesis for this shared page (see `wahapediaCli.ts`), so one chapter's
  *    page cannot re-introduce another chapter's detachments.
@@ -31,6 +35,7 @@ export const WAHAPEDIA_SLUGS: Record<string, string | null> = {
   'chaos-space-marines': 'chaos-space-marines',
   'death-guard': 'death-guard',
   'drukhari': 'drukhari',
+  'emperor-s-children': 'emperor-s-children',
   'genestealer-cults': 'genestealer-cults',
   'grey-knights': 'grey-knights',
   'imperial-knights': 'imperial-knights',
@@ -61,7 +66,6 @@ export const WAHAPEDIA_SLUGS: Record<string, string | null> = {
   'white-scars': 'space-marines',
 
   // — No Wahapedia equivalent (skipped) —
-  'adeptus-titanicus': null, // Adeptus Titanicus is a separate game system
-  'titanicus-traitoris': null, // (Chaos) Titan Legions — likewise not in wh40k10ed
-  'ynnari': null, // folded into the Aeldari page; no standalone detachments
+  'adeptus-titanicus': null, // Adeptus Titanicus is a separate game system (no detachments)
+  'titanicus-traitoris': null, // (Chaos) Titan Legions — no page on wh40k11ed either
 }

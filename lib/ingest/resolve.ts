@@ -129,7 +129,7 @@ const WEAPON_TYPES = new Set(['Ranged Weapons', 'Melee Weapons'])
  * to other datasheets. Matched by the group's canonical (English) name, like the
  * typeName sets above. (Enhancements get their own home once detachments are extracted.)
  */
-function isPrunedOption(name: string | undefined): boolean {
+export function isPrunedOption(name: string | undefined): boolean {
   if (!name) return false
   return name === 'Crusade' || name === 'Enhancements' || name.endsWith(' Enhancements')
 }

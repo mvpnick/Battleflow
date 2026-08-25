@@ -1,10 +1,10 @@
 import {
   fetchRaw,
-  getLatestReleaseTag,
+  getLatestRef,
   listDataFiles,
   resolveRef,
 } from './fetch'
-import { parseCatalogue, parseGameSystem } from '../parsers/bsdata'
+import { parseCatalogue11, parseGameSystem11 } from '../parsers/bsdata11'
 import {
   buildIndex,
   collectCrusadeIds,
@@ -18,13 +18,13 @@ import { prepareArtifact, writeArtifact, writeManifest, type EmitResult } from '
 import { DATA_SCHEMA_VERSION, type DataManifest } from '../dataModel'
 import { deriveFactionKeywords, type ChainEntry } from './keywords'
 
-type Args = { tag?: string; factions: string[] | 'all'; dryRun: boolean }
+type Args = { ref?: string; factions: string[] | 'all'; dryRun: boolean }
 
 function parseArgs(argv: string[]): Args {
   const args: Args = { factions: 'all', dryRun: false }
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i]
-    if (a === '--tag') args.tag = argv[++i]
+    if (a === '--ref') args.ref = argv[++i]
     else if (a === '--factions') {
       const v = argv[++i]
       args.factions = v === 'all' ? 'all' : v.split(',').map((s) => s.trim()).filter(Boolean)
@@ -33,20 +33,25 @@ function parseArgs(argv: string[]): Args {
   return args
 }
 
+/** Fetch + parse a catalogue JSON file at a pinned sha. */
+async function fetchCatalogue(sha: string, filename: string) {
+  return parseCatalogue11(JSON.parse(await fetchRaw(sha, filename)))
+}
+
 function slugify(s: string): string {
   return s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
 }
 
-/** "Imperium - Space Marines.cat" -> "space-marines"; "Necrons.cat" -> "necrons". */
+/** "Imperium - Space Marines.json" -> "space-marines"; "Necrons.json" -> "necrons". */
 function factionSlug(filename: string): string {
-  const stem = filename.replace(/\.cat$/, '')
+  const stem = filename.replace(/\.json$/, '')
   const last = stem.split(' - ').pop() ?? stem
   return slugify(last)
 }
 
 function isFactionFile(filename: string): boolean {
   if (/library/i.test(filename)) return false
-  if (filename === 'Unaligned Forces.cat') return false
+  if (filename === 'Unaligned Forces.json') return false
   return true
 }
 
@@ -56,14 +61,14 @@ async function makeFileFinder(sha: string, allCatFiles: string[]) {
   const scanned = new Set<string>()
   return async function findFileById(targetId: string, name: string): Promise<string | undefined> {
     if (idToFile.has(targetId)) return idToFile.get(targetId)
-    const guess = `${name}.cat`
+    const guess = `${name}.json`
     const ordered = allCatFiles.includes(guess)
       ? [guess, ...allCatFiles.filter((f) => f !== guess)]
       : allCatFiles
     for (const file of ordered) {
       if (scanned.has(file)) continue
       scanned.add(file)
-      const cat = parseCatalogue(await fetchRaw(sha, file))
+      const cat = await fetchCatalogue(sha, file)
       idToFile.set(cat.id, file)
       if (cat.id === targetId) return file
     }
@@ -92,7 +97,7 @@ async function loadChain(
   const queue: { file: string; enumerateRoots: boolean }[] = [{ file: startFile, enumerateRoots: true }]
   while (queue.length) {
     const { file, enumerateRoots } = queue.shift()!
-    const cat = parseCatalogue(await fetchRaw(sha, file))
+    const cat = await fetchCatalogue(sha, file)
     const existing = entries.get(cat.id)
     if (existing) {
       if (!enumerateRoots || existing.enumerateRoots) continue // no new enumerability to propagate
@@ -115,14 +120,14 @@ async function loadChain(
 
 async function main() {
   const args = parseArgs(process.argv.slice(2))
-  const tag = args.tag ?? (await getLatestReleaseTag())
-  console.log(`Ingesting BSData wh40k-10e @ ${tag}`)
+  const ref = args.ref ?? (await getLatestRef())
+  console.log(`Ingesting BSData wh40k-11e @ ${ref}`)
 
-  const { sha } = await resolveRef(tag)
-  console.log(`  resolved ${tag} -> ${sha}`)
+  const { sha } = await resolveRef(ref)
+  console.log(`  resolved ${ref} -> ${sha}`)
 
   const { gst: gstFile, catalogues } = await listDataFiles(sha)
-  const gst = parseGameSystem(await fetchRaw(sha, gstFile))
+  const gst = parseGameSystem11(JSON.parse(await fetchRaw(sha, gstFile)))
   const crusadeIds = collectCrusadeIds(gst)
   // Ids of every rule defined in the GST — the edition's Core abilities. Threaded into
   // unit traversal so each unit rule can be tagged Core at ingest (see resolve.ts).
@@ -184,7 +189,7 @@ async function main() {
 
   const manifest: DataManifest = {
     schemaVersion: DATA_SCHEMA_VERSION,
-    bsDataTag: tag,
+    bsDataTag: ref,
     bsDataCommit: sha,
     buildTime: new Date().toISOString(),
     factions: results

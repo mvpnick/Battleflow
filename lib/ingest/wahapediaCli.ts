@@ -9,9 +9,10 @@ import {
 } from './emit'
 import {
   fetchFactionPage,
-  parseEnhancements,
+  parseEnhancementKinds,
+  parseRealDetachmentNames,
   parseStratagems,
-  type DetachmentEnhancements,
+  type DetachmentEnhancementKinds,
   type DetachmentStratagems,
 } from './wahapedia'
 import { WAHAPEDIA_SLUGS } from './wahapediaFactions'
@@ -92,35 +93,47 @@ function tokensCompatible(a: string, b: string): boolean {
  */
 const SKIP_GROUPS = new Set(['core'])
 
-type MergeStats = { matched: number; synthesized: number; stratagems: number; enhancements: number; pruned: number }
+type MergeStats = {
+  matched: number
+  synthesized: number
+  stratagems: number
+  enhancementsFlagged: number
+  pruned: number
+}
 
 /**
- * Merge scraped stratagem + enhancement groups into an artifact's detachments, in place.
+ * Merge scraped stratagems (and Upgrade-subtype enhancement flags) into an artifact's
+ * detachments, in place.
  *
- * - A group whose name matches an existing detachment fills that detachment's `stratagems`
- *   / `enhancements`. Matching ignores case/punctuation and a trailing parenthetical
+ * - A group whose name matches an existing (BSData-sourced) detachment fills that
+ *   detachment's `stratagems`. Matching ignores case/punctuation and a trailing parenthetical
  *   qualifier, so Wahapedia's "Alien Hunters" fills BSData's "Alien Hunters (Ordo Xenos)".
- * - A group with no match is appended as a synthesized shell detachment (empty `rules`), but ONLY
- *   when `allowSynthesis` is set AND the same (normalized) name is also present in the parsed
- *   enhancement groups. Real 10e detachments always carry an enhancement table (typically 4
- *   cards); structurally-different listings — Boarding Action / Boarding Swarm / Embarked
- *   Regiment / Tempestus Boarding Regiment / Underdeck Uprising / Daemonic Incursion variants,
- *   etc. — never do. Gating synthesis on the enhancement signal therefore prunes the
- *   alt-game-mode shells without needing a maintained name list.
+ * - A group with no match is appended as a synthesized shell detachment (empty `rules`), but
+ *   ONLY when `allowSynthesis` is set AND the same (normalized) name is in `realDetachmentNames`
+ *   — every genuine 11e detachment's page heading carries a Detachment Points badge (see
+ *   `parseRealDetachmentNames` in `wahapedia.ts`); alt-game-mode listings (Boarding Action,
+ *   Crusade, …) don't. This replaces 10e's "does an enhancement table exist for this name"
+ *   heuristic now that enhancements are BSData-sourced, not scraped (Phase 4/6).
  * - Synthesis is DISABLED for the shared Space Marines page (served to all 12 chapters):
  *   that page lists every chapter's stratagem cards, so an unmatched group is another
  *   chapter's detachment — already modelled in the pinned BSData release and correctly
  *   scoped out of THIS chapter — not a genuinely-new one. Synthesizing it would re-leak
  *   the cross-chapter detachments that ingest deliberately scoped away.
+ * - Enhancement Upgrade-subtype flags are matched onto the detachment's existing (BSData)
+ *   `enhancements` array by name — never used to create or replace that array, since BSData
+ *   is the structural source of truth for it now. A flag matching no existing enhancement is
+ *   logged and skipped.
  *
- * Finally, after merging, any detachment that ended up with both empty `rules` and no
- * `enhancements` is pruned — this drops legacy Boarding-mode shells synthesized before the
- * gate above was introduced, so the regenerate step naturally cleans them out.
+ * Finally, after merging, any detachment left with both empty `rules` and empty `stratagems`
+ * is pruned — a real BSData detachment always carries rules, and a synthesized shell is only
+ * created when it has stratagems, so this drops legacy shells left over from before the
+ * DP-badge gate existed (and any detachment now shown by BSData to be alt-game-mode-only).
  */
 function mergeStratagems(
   artifact: FactionArtifact,
   stratagemGroups: DetachmentStratagems[],
-  enhancementGroups: DetachmentEnhancements[],
+  realDetachmentNames: Set<string>,
+  enhancementKindGroups: DetachmentEnhancementKinds[],
   allowSynthesis: boolean,
 ): MergeStats {
   // Pre-prune: drop synthesized shells from previous runs (rules.length === 0)
@@ -141,43 +154,41 @@ function mergeStratagems(
     if (!byName.has(bare)) byName.set(bare, d)
   }
 
-  // Name keys of enhancement groups parsed off the same page — the structural signal
-  // that an otherwise-unmatched stratagem group represents a real 10e detachment, not
-  // a Boarding-Action-style alt-mode listing. Stored as both the raw and
-  // qualifier-stripped form so "Alien Hunters" matches "Alien Hunters (Ordo Xenos)".
-  // Token sets are kept separately to support the same token-subset fallback used
-  // for detachment matching (handles "Ordo Xenos Alien Hunters" vs "Alien Hunters").
-  const enhancementGroupKeys = new Set<string>()
-  const enhancementGroupNames: string[] = []
-  for (const g of enhancementGroups) {
-    if (SKIP_GROUPS.has(nameKey(g.name))) continue
-    enhancementGroupKeys.add(nameKey(g.name))
-    enhancementGroupKeys.add(nameKey(stripQualifier(g.name)))
-    enhancementGroupNames.push(g.name)
+  // Name keys of real (DP-badged, non-alt-game-mode) detachments parsed off the same page —
+  // the structural signal that an otherwise-unmatched stratagem group represents a genuine
+  // detachment BSData's pinned commit doesn't yet have, not a Boarding-Action-style alt-mode
+  // listing. Stored as both the raw and qualifier-stripped form so "Alien Hunters" matches
+  // "Alien Hunters (Ordo Xenos)". Names are kept separately to support the same token-subset
+  // fallback used for detachment matching.
+  const realDetachmentKeys = new Set<string>()
+  const realDetachmentNameList: string[] = []
+  for (const name of realDetachmentNames) {
+    if (SKIP_GROUPS.has(nameKey(name))) continue
+    realDetachmentKeys.add(nameKey(name))
+    realDetachmentKeys.add(nameKey(stripQualifier(name)))
+    realDetachmentNameList.push(name)
   }
 
-  /** True if any scraped enhancement group is the same detachment as `groupName`. */
-  const hasMatchingEnhancementGroup = (groupName: string): boolean => {
+  /** True if `groupName` names one of the page's real (DP-badged) detachments. */
+  const isRealDetachment = (groupName: string): boolean => {
     if (
-      enhancementGroupKeys.has(nameKey(groupName)) ||
-      enhancementGroupKeys.has(nameKey(stripQualifier(groupName)))
+      realDetachmentKeys.has(nameKey(groupName)) ||
+      realDetachmentKeys.has(nameKey(stripQualifier(groupName)))
     ) {
       return true
     }
-    // Final fallback: token-subset across enhancement group names.
-    return enhancementGroupNames.some((n) => tokensCompatible(n, groupName))
+    // Final fallback: token-subset across real detachment names.
+    return realDetachmentNameList.some((n) => tokensCompatible(n, groupName))
   }
 
   /**
    * Resolve a scraped group to a detachment, synthesizing a shell when allowed.
    * Matching tries exact / qualifier-stripped first, then a token-subset fallback
    * for cross-source naming irregularities (BSData's "Alien Hunters (Ordo Xenos)"
-   * vs Wahapedia's enhancement-section "Ordo Xenos Alien Hunters" — same detachment,
-   * different word order).
+   * vs Wahapedia's "Ordo Xenos Alien Hunters" — same detachment, different word order).
    *
-   * `requireEnhancementGroup` is set by the stratagem pass: synthesis is gated on
-   * the presence of a same-name enhancement group, the structural signal that the
-   * group represents a real detachment rather than an alt-game-mode listing.
+   * Synthesis is gated on `isRealDetachment`, the structural signal (a DP badge on the
+   * page) that the group represents a real detachment rather than an alt-game-mode listing.
    *
    * Returns `{ det, synthesized }` so callers can count true shell creation vs.
    * matches that resolved to an existing detachment via the token-subset fallback
@@ -186,7 +197,6 @@ function mergeStratagems(
   const findOrSynth = (
     groupName: string,
     makeShell: () => Detachment,
-    requireEnhancementGroup: boolean,
   ): { det: Detachment; synthesized: boolean } | null => {
     if (SKIP_GROUPS.has(nameKey(groupName))) return null
     const existing = byName.get(nameKey(groupName)) ?? byName.get(nameKey(stripQualifier(groupName)))
@@ -197,30 +207,26 @@ function mergeStratagems(
       if (tokensCompatible(d.name, groupName)) return { det: d, synthesized: false }
     }
     if (!allowSynthesis) return null
-    if (requireEnhancementGroup && !hasMatchingEnhancementGroup(groupName)) return null
+    if (!isRealDetachment(groupName)) return null
     const shell = makeShell()
     artifact.detachments.push(shell)
     byName.set(nameKey(groupName), shell)
     return { det: shell, synthesized: true }
   }
 
-  const stats: MergeStats = { matched: 0, synthesized: 0, stratagems: 0, enhancements: 0, pruned: 0 }
+  const stats: MergeStats = { matched: 0, synthesized: 0, stratagems: 0, enhancementsFlagged: 0, pruned: 0 }
   const matchedDetachments = new Set<Detachment>()
   const synthesizedDetachments = new Set<Detachment>()
 
   for (const group of stratagemGroups) {
     if (SKIP_GROUPS.has(nameKey(group.name))) continue
     stats.stratagems += group.stratagems.length
-    const result = findOrSynth(
-      group.name,
-      () => ({
-        id: `waha-${slugify(group.name)}`,
-        name: group.name,
-        rules: [],
-        stratagems: group.stratagems,
-      }),
-      true, // synthesis only if an enhancement group of the same name exists
-    )
+    const result = findOrSynth(group.name, () => ({
+      id: `waha-${slugify(group.name)}`,
+      name: group.name,
+      rules: [],
+      stratagems: group.stratagems,
+    }))
     if (!result) continue
     const erasedSummaries = result.det.stratagems.filter((s) => s.summary).length
     if (erasedSummaries > 0) {
@@ -233,34 +239,41 @@ function mergeStratagems(
     else matchedDetachments.add(result.det)
   }
 
-  for (const group of enhancementGroups) {
-    if (SKIP_GROUPS.has(nameKey(group.name))) continue
-    stats.enhancements += group.enhancements.length
-    // Enhancement-only groups carry their own structural signal (they exist) and
-    // mirror the legacy behaviour: always allowed to synthesize when no BSData match.
-    const result = findOrSynth(
-      group.name,
-      () => ({
-        id: `waha-${slugify(group.name)}`,
-        name: group.name,
-        rules: [],
-        stratagems: [],
-        enhancements: group.enhancements,
-      }),
-      false,
-    )
-    if (!result) continue
-    result.det.enhancements = group.enhancements
-    if (result.synthesized) synthesizedDetachments.add(result.det)
+  // Enhancement Upgrade-subtype flags: matched onto the detachment's EXISTING (BSData-sourced)
+  // `enhancements` array by name — never used to create a detachment or replace that array.
+  for (const group of enhancementKindGroups) {
+    if (SKIP_GROUPS.has(nameKey(group.name)) || group.upgradeNames.length === 0) continue
+    const det =
+      byName.get(nameKey(group.name)) ??
+      byName.get(nameKey(stripQualifier(group.name))) ??
+      artifact.detachments.find((d) => tokensCompatible(d.name, group.name))
+    if (!det?.enhancements) continue
+    for (const upgradeName of group.upgradeNames) {
+      const match = det.enhancements.find(
+        (e) =>
+          nameKey(e.name) === nameKey(upgradeName) ||
+          nameKey(stripQualifier(e.name)) === nameKey(stripQualifier(upgradeName)) ||
+          tokensCompatible(e.name, upgradeName),
+      )
+      if (match) {
+        match.kind = 'upgrade'
+        stats.enhancementsFlagged++
+      } else {
+        console.warn(
+          `  ⚠ Upgrade-marked enhancement "${upgradeName}" (${group.name}) matches no BSData enhancement — skipped`,
+        )
+      }
+    }
   }
 
   // Prune legacy shells synthesized before the gate above existed: a detachment with
-  // no rules AND no enhancements is, by construction, a Boarding-mode / alt-game-mode
-  // listing that slipped through. Real BSData detachments carry rules; real new
-  // detachments would have picked up enhancements above.
+  // no rules AND no stratagems is, by construction, a Boarding-mode / alt-game-mode
+  // listing that slipped through (or a shell whose stratagem group vanished on a
+  // later run). Real BSData detachments always carry rules; a synthesized shell is
+  // only ever created together with stratagems.
   const before = artifact.detachments.length
   artifact.detachments = artifact.detachments.filter(
-    (d) => d.rules.length > 0 || (d.enhancements?.length ?? 0) > 0,
+    (d) => d.rules.length > 0 || d.stratagems.length > 0,
   )
   stats.pruned = before - artifact.detachments.length
 
@@ -325,16 +338,23 @@ async function main() {
     const html = await getPage(slug)
     const source = sourceName(artifact.factionName)
     const stratagemGroups = parseStratagems(html, source)
-    const enhancementGroups = parseEnhancements(html, source)
+    const realDetachmentNames = parseRealDetachmentNames(html)
+    const enhancementKindGroups = parseEnhancementKinds(html)
     const allowSynthesis = (slugFactionCount.get(slug) ?? 0) <= 1
-    const stats = mergeStratagems(artifact, stratagemGroups, enhancementGroups, allowSynthesis)
+    const stats = mergeStratagems(
+      artifact,
+      stratagemGroups,
+      realDetachmentNames,
+      enhancementKindGroups,
+      allowSynthesis,
+    )
 
     const result = prepareArtifact(artifact)
     updated.set(id, result)
     if (!args.dryRun) await writeArtifact(result)
 
     const newDets = stats.synthesized > 0 ? `, ${stats.synthesized} new detachment(s)` : ''
-    const enh = stats.enhancements > 0 ? `, ${stats.enhancements} enhancement(s)` : ''
+    const enh = stats.enhancementsFlagged > 0 ? `, ${stats.enhancementsFlagged} enhancement(s) flagged Upgrade` : ''
     const pruned = stats.pruned > 0 ? `, ${stats.pruned} shell(s) pruned` : ''
     console.log(`${stats.stratagems} stratagems → ${stats.matched} matched detachment(s)${enh}${newDets}${pruned}`)
   }

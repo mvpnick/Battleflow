@@ -67,7 +67,7 @@ into small, self-contained per-faction JSON artifacts committed under `public/da
   `SharedDetachmentSet`), extending the UI types in `lib/types.ts`.
 
 ## Updating game data (the "living rules" bump)
-1. `npm run ingest -- --tag vX.Y.Z` (omit `--tag` to use the latest GitHub release; `--factions
+1. `npm run ingest -- --ref <sha-or-branch>` (omit `--ref` to use the latest commit; `--factions
    <slug,slug|all>`, `--dry-run` also supported). Set `GITHUB_TOKEN` to avoid API rate limits.
    This (re)writes datasheets + detachments/rules and resets `detachments[].stratagems`.
 2. `npm run ingest:wahapedia -- [--factions <slug,slug|all>] [--dry-run]` to re-merge stratagems

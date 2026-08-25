@@ -27,14 +27,19 @@ import { z } from 'zod'
  * v2: datasheet abilities became structured ({@link UnitAbilitySchema}) — each carries a
  * `category` (core / faction / datasheet) and optional themed-group label, and the
  * Damaged profile is split into `PreparedUnit.damaged`. Requires a full re-ingest.
+ *
+ * v3: 11e cutover — data now comes from `BSData/wh40k-11e` instead of `wh40k-10e` (see
+ * AGENTS.md). Adds `DetachmentSchema.dpCost` (Detachment Points), `forceDisposition`, and
+ * promotes `enhancements` to {@link EnhancementSchema} (adds `kind`). Drops 10e-specific
+ * assumptions — the field names/shapes otherwise carry over unchanged.
  */
-export const DATA_SCHEMA_VERSION = 2 as const
+export const DATA_SCHEMA_VERSION = 3 as const
 
 // ---------------------------------------------------------------------------
 // Phase IDs
 // ---------------------------------------------------------------------------
 
-/** All six 10th-edition turn phases, in order. */
+/** All six turn phases, in order. Confirmed unchanged from 10e to 11e. */
 export const PHASE_IDS = [
   'command', 'movement', 'shooting', 'charge', 'fight', 'battleshock',
 ] as const
@@ -209,6 +214,26 @@ export const PreparedUnitSchema = z.object({
   damaged: RuleSchema.optional(),
 })
 
+/**
+ * An 11e detachment enhancement — a {@link RuleSchema} extended with the "Upgrade" vs
+ * "Character" subtype distinction 11e introduced (Upgrade enhancements attach to a unit
+ * rather than a Character model). Not structurally flagged by BSData; extracted from a
+ * `<span class="EnhUpgrade">` marker on the matching Wahapedia card (see
+ * `docs/11e-migration-plan.md` Phase 4/6). Absent `kind` means "character" (the common case).
+ */
+export const EnhancementSchema = RuleSchema.extend({
+  kind: z.enum(['character', 'upgrade']).optional(),
+})
+
+/**
+ * 11e's five Force Disposition values, from the GST's shared `Force Disposition`
+ * selectionEntryGroup (confirmed structural in the Phase 1 spike — every detachment's
+ * `categoryLinks` includes exactly one of these names).
+ */
+export const FORCE_DISPOSITIONS = [
+  'Disruption', 'Priority Assets', 'Purge the Foe', 'Take and Hold', 'Reconnaissance',
+] as const
+
 /** One faction detachment with its rules and stratagems. */
 export const DetachmentSchema = z.object({
   id: z.string(),
@@ -220,12 +245,18 @@ export const DetachmentSchema = z.object({
   rules: z.array(GlossaryRuleSchema),
   stratagems: z.array(StratSchema),
   /**
-   * Character enhancements available in this detachment, merged in from Wahapedia
-   * (BSData does not model enhancement rules as machine-readable profiles). Optional
-   * because older artifacts pre-date this field and detachments synthesized from
-   * pages we haven't scraped have no enhancement data.
+   * Character enhancements available in this detachment. Extracted from BSData's
+   * `sharedSelectionEntryGroups["Enhancements"]` (structural, confirmed in the Phase 1
+   * spike — previously scraped from Wahapedia, which does not carry the "Upgrade" subtype
+   * BSData doesn't flag either; see {@link EnhancementSchema}). Optional because older
+   * artifacts pre-date this field and detachments synthesized from unscraped Wahapedia
+   * pages have no enhancement data.
    */
-  enhancements: z.array(RuleSchema).optional(),
+  enhancements: z.array(EnhancementSchema).optional(),
+  /** Detachment Points cost (11e). Read from BSData's structural `Detachment Points` cost. */
+  dpCost: z.number().optional(),
+  /** This detachment's Force Disposition (11e). Every detachment should have exactly one. */
+  forceDisposition: z.enum(FORCE_DISPOSITIONS).optional(),
 })
 
 // ---------------------------------------------------------------------------
@@ -294,6 +325,11 @@ export const ManifestSharedDetachmentsSchema = z.object({
 /** The top-level manifest index (`public/data/manifest.json`). */
 export const DataManifestSchema = z.object({
   schemaVersion: z.literal(DATA_SCHEMA_VERSION),
+  /**
+   * The ref the ingest was run against. `wh40k-11e` ships no GitHub Releases (unlike
+   * 10e's tagged releases), so this is almost always a branch name (`"main"`) rather than
+   * a version tag today — `bsDataCommit` below is the actual reproducibility anchor.
+   */
   bsDataTag: z.string(),
   bsDataCommit: z.string(),
   buildTime: z.string(),
@@ -315,6 +351,7 @@ export type UnitAbility = z.infer<typeof UnitAbilitySchema>
 export type Strat = z.infer<typeof StratSchema>
 export type ArmyRuleOption = z.infer<typeof ArmyRuleOptionSchema>
 export type GlossaryRule = z.infer<typeof GlossaryRuleSchema>
+export type Enhancement = z.infer<typeof EnhancementSchema>
 
 /**
  * Alias of {@link GlossaryRule}. Detachment-specific rules are stored in the same

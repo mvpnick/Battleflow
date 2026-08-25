@@ -1,8 +1,11 @@
 import type { Catalogue, EntryLink, InfoLink, Profile, RuleNode, SelectionEntry, SelectionEntryGroup } from '../parsers/bsdata'
 import { textOf } from '../parsers/bsdata'
-import { buildIndex, type BsIndex } from './resolve'
-import type { Detachment, DetachmentRule } from '../dataModel'
+import { buildIndex, isPrunedOption, type BsIndex } from './resolve'
+import { FORCE_DISPOSITIONS, type Detachment, type DetachmentRule, type Enhancement } from '../dataModel'
+import { norm } from '../roster/normalize'
 import type { Strat } from '../types'
+
+type ForceDisposition = (typeof FORCE_DISPOSITIONS)[number]
 
 const STRATAGEM_TYPE = 'Stratagem'
 
@@ -160,6 +163,30 @@ function collectDetachmentContent(
   }
 }
 
+/** Detachment Points cost (11e) — a real BSData `Cost` entry, read the same way `pts` is. */
+function detachmentDpCost(entry: SelectionEntry): number | undefined {
+  const cost = entry.costs?.cost?.find(c => c.name === 'Detachment Points')
+  if (!cost) return undefined
+  const value = Number(cost.value)
+  return Number.isNaN(value) ? undefined : value
+}
+
+/**
+ * Force Disposition (11e) — structural via `categoryLinks`: every detachment carries exactly
+ * one of the GST's five Force Disposition names as a category link. Warns loudly (not a
+ * silent no-op) on a miss, since every 11e detachment should have one — a miss means the
+ * GST's Force Disposition group changed shape.
+ */
+function detachmentForceDisposition(entry: SelectionEntry): ForceDisposition | undefined {
+  const dispositions: readonly string[] = FORCE_DISPOSITIONS
+  const link = entry.categoryLinks?.categoryLink?.find(c => dispositions.includes(c.name))
+  if (!link) {
+    console.warn(`  ⚠ detachment "${entry.name}" has no Force Disposition categoryLink`)
+    return undefined
+  }
+  return link.name as ForceDisposition
+}
+
 function entryToDetachment(entry: SelectionEntry, index: BsIndex): Detachment | null {
   const stratProfiles: Profile[] = []
   const abilityProfiles: Profile[] = []
@@ -182,11 +209,16 @@ function entryToDetachment(entry: SelectionEntry, index: BsIndex): Detachment | 
     ...dedup(ruleNodes).map(r => detachmentRuleFromRuleNode(r, entry.name)),
   ]
 
+  const dpCost = detachmentDpCost(entry)
+  const forceDisposition = detachmentForceDisposition(entry)
+
   return {
     id: entry.id,
     name: entry.name,
     stratagems: dedup(stratProfiles).map(p => stratagemFromProfile(p, entry.name)),
     rules,
+    ...(dpCost != null ? { dpCost } : {}),
+    ...(forceDisposition ? { forceDisposition } : {}),
   }
 }
 
@@ -250,6 +282,108 @@ function detachmentEntriesOf(cat: Catalogue, index: BsIndex): SelectionEntry[] {
   }
 
   return entries
+}
+
+function enhancementFromEntry(entry: SelectionEntry, source: string): Enhancement {
+  const profile = entry.profiles?.profile?.[0]
+  const effect = profile ? charValue(profile, 'Description', 'Effect') : ''
+  return { name: entry.name, timing: '', effect, source }
+}
+
+/** Strip combining diacritics (e.g. Leagues of Votann's "Needgaârd" vs the enhancement
+ * comment's plain-ASCII "Needgaard") so name matching isn't defeated by GW's stylized spelling. */
+function foldDiacritics(s: string): string {
+  return s.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+}
+
+/** Lowercase alphanumeric word-token set, diacritic- and punctuation-insensitive. */
+function wordTokens(s: string): Set<string> {
+  return new Set(norm(foldDiacritics(s)).split(/[^a-z0-9]+/).filter(Boolean))
+}
+
+function isSubsetOf(sub: Set<string>, sup: Set<string>): boolean {
+  for (const x of sub) if (!sup.has(x)) return false
+  return true
+}
+
+export interface EnhancementGroup {
+  comment: string
+  enhancements: Enhancement[]
+}
+
+/**
+ * Extract 11e enhancements from a faction's owned catalogues (BSData structural data —
+ * confirmed in the Phase 1 spike; previously scraped from Wahapedia). Every faction
+ * catalogue carries one or more `sharedSelectionEntryGroups` named "Enhancements" (bare, or
+ * "\<X\> Enhancements" — the same option-subtree names `isPrunedOption` already excludes from
+ * unit ability collection in `resolve.ts`), each holding individual enhancement
+ * `selectionEntry`s. BSData uses two different structural patterns to name the owning
+ * detachment, observed across factions in the full-catalogue run:
+ *
+ *  - Necrons-style: one bare "Enhancements" pool shared by every detachment, disambiguated
+ *    per entry via a `comment` field ("Awakened Dynasty", or a short distinguishing keyword
+ *    like "Zealots" for "Pactbound Zealots" — {@link matchEnhancementGroups} resolves either).
+ *  - Space Marines-style: one group per detachment, named "\<Detachment\> Enhancements"
+ *    (e.g. "Gladius Task Force Enhancements"), whose entries carry no `comment` at all — the
+ *    group name already names the detachment, so it's used as the fallback owner.
+ *
+ * `comment: null` on a bare "Enhancements" pool entry (no group-name fallback available)
+ * means genuinely unlisted/Legends content — logged and skipped, not silently dropped.
+ */
+export function extractEnhancements(ownedCatalogues: Catalogue[]): EnhancementGroup[] {
+  const byOwner = new Map<string, Enhancement[]>()
+  for (const cat of ownedCatalogues) {
+    for (const group of cat.sharedSelectionEntryGroups?.selectionEntryGroup ?? []) {
+      if (!isPrunedOption(group.name)) continue
+      // A "<Detachment> Enhancements" group already names its detachment; only the bare
+      // "Enhancements" pool needs the per-entry `comment` to disambiguate.
+      const groupOwner = group.name === 'Enhancements' ? undefined : group.name.replace(/ Enhancements$/, '')
+      for (const entry of group.selectionEntries?.selectionEntry ?? []) {
+        const owner = entry.comment ?? groupOwner
+        if (!owner) {
+          console.warn(`  ⚠ enhancement "${entry.name}" has no owning-detachment comment — skipped (Legends/unlisted content?)`)
+          continue
+        }
+        const list = byOwner.get(owner) ?? []
+        list.push(enhancementFromEntry(entry, owner))
+        byOwner.set(owner, list)
+      }
+    }
+  }
+  return [...byOwner.entries()].map(([comment, enhancements]) => ({ comment, enhancements }))
+}
+
+/**
+ * Resolve each enhancement group's `comment` to exactly one of `detachments`, mutating
+ * matched detachments' `enhancements` in place. A group matches a detachment when the
+ * comment's word tokens are a subset of the detachment name's word tokens (diacritic- and
+ * punctuation-insensitive) — e.g. comment "Siege-host" matches "Fellhammer Siege-host".
+ * Matching is GLOBAL (every group is checked against every detachment) rather than
+ * first-match, because a single-token comment can be a token-subset of more than one
+ * detachment name in the same faction (Chaos Space Marines' "Raiders" is a subset of both
+ * "Renegade Raiders" and "Murdertalon Raiders"). When more than one detachment matches, the
+ * group is logged and skipped rather than guessed — misattributing enhancements to the wrong
+ * detachment is worse than omitting them. Likewise a group matching zero detachments is
+ * logged and skipped (comment text that doesn't resolve, e.g. a BSData-internal shorthand).
+ */
+export function matchEnhancementGroups(groups: EnhancementGroup[], detachments: Detachment[]): void {
+  const detachmentTokens = detachments.map(d => ({ det: d, tokens: wordTokens(d.name) }))
+  for (const group of groups) {
+    const groupTokens = wordTokens(group.comment)
+    const candidates = detachmentTokens.filter(({ tokens }) => isSubsetOf(groupTokens, tokens))
+    if (candidates.length === 1) {
+      candidates[0].det.enhancements = group.enhancements
+    } else if (candidates.length === 0) {
+      console.warn(
+        `  ⚠ ${group.enhancements.length} enhancement(s) with comment "${group.comment}" match no detachment — skipped`,
+      )
+    } else {
+      console.warn(
+        `  ⚠ ${group.enhancements.length} enhancement(s) with comment "${group.comment}" match ` +
+          `${candidates.length} detachments ambiguously (${candidates.map(c => c.det.name).join(', ')}) — skipped`,
+      )
+    }
+  }
 }
 
 /**
@@ -353,6 +487,8 @@ export function extractDetachments(
       if (det) detachments.push(det)
     }
   }
+
+  matchEnhancementGroups(extractEnhancements(ownedCatalogues), detachments)
 
   return detachments
 }

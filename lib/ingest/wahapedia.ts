@@ -1,19 +1,23 @@
 import { parse, type HTMLElement } from 'node-html-parser'
-import type { Rule, Strat } from '../types'
+import type { Strat } from '../types'
 
 /**
  * Offline Wahapedia stratagem scraper.
  *
  * BSData does not model stratagems as machine-readable profiles, so faction stratagems
  * are sourced separately from wahapedia.ru's static, server-rendered faction pages. Each
- * stratagem is a `.str10Wrap` card; the cards are grouped under detachment headings encoded
+ * stratagem is a `.str11Wrap` card; the cards are grouped under detachment headings encoded
  * in the card's type line (e.g. "Hallowed Martyrs – Epic Deed Stratagem"). This module
  * fetches a faction page and returns one `Strat[]` per detachment group.
+ *
+ * 11e enhancements now come from BSData (docs/11e-migration-plan.md Phase 4) — this module's
+ * enhancement-related role has narrowed to flagging the "Upgrade" subtype (see
+ * {@link parseEnhancementKinds} below), not extracting rules text.
  *
  * Run-once at ingest time only — never on the request path.
  */
 
-const WAHAPEDIA_BASE = 'https://wahapedia.ru/wh40k10ed/factions'
+const WAHAPEDIA_BASE = 'https://wahapedia.ru/wh40k11ed/factions'
 
 /** Identify the offline scraper so Wahapedia can attribute (and rate-limit) it fairly. */
 const USER_AGENT =
@@ -22,7 +26,13 @@ const USER_AGENT =
 /** Stratagems for one detachment, keyed by the detachment's display name. */
 export type DetachmentStratagems = { name: string; stratagems: Strat[] }
 
-/** Fetch a faction's Wahapedia page HTML with a respectful User-Agent. */
+/**
+ * Fetch a faction's Wahapedia page HTML with a respectful User-Agent. The trailing slash
+ * matters for `space-marines`: with it, the page renders its "No filter" view (every chapter's
+ * supplement detachments included); without it, the server defaults to the codex-only "No
+ * supplements" view and chapter-specific detachments are absent from the HTML entirely
+ * (confirmed live, 2026-08-25). All other faction slugs are unaffected either way.
+ */
 export async function fetchFactionPage(slug: string): Promise<string> {
   const res = await fetch(`${WAHAPEDIA_BASE}/${slug}/`, {
     headers: { 'User-Agent': USER_AGENT },
@@ -78,48 +88,100 @@ function htmlToText(html: string): string {
 }
 
 /**
- * Split a `.str10Text` body into its labelled sections. Wahapedia delimits them with bold
- * labels (`<b>WHEN:</b>`, `<b>TARGET:</b>`, …); each section runs until the next label.
+ * Extract an element's own display text, stripping a trailing footnote/rule-reference marker
+ * nested inside it (e.g. 11e's core-rules cards render `<div class="str11Name">COMMAND
+ * RE-ROLL<span class="h_number">15.02</span></div>` — without stripping, the number fuses
+ * onto the name). Generalized rather than `.h_number`-specific so any nested trailing marker
+ * span is handled the same way (also reused for the `EnhUpgrade` marker below).
  */
-function splitSections(bodyHtml: string): Record<string, string> {
-  const re = /<b>\s*(WHEN|TARGET|EFFECT|RESTRICTIONS)\s*:\s*<\/b>/gi
+function textWithoutTrailingMarker(el: HTMLElement | null, markerSelector: string): string {
+  if (!el) return ''
+  let text = el.text.trim()
+  const marker = el.querySelector(markerSelector)
+  if (marker) {
+    const markerText = marker.text.trim()
+    if (markerText && text.endsWith(markerText)) {
+      text = text.slice(0, text.length - markerText.length).trim()
+    }
+  }
+  return text
+}
+
+/**
+ * Split a `.str11Text` body into WHEN / TARGET / RESTRICTION(S) / everything-else. 11e adds
+ * granular sub-headers beyond the 10e set (`ELIGIBLE IF`, `BEFORE/WHILE/AFTER MOVING`,
+ * `MAXIMUM DISTANCE`, `WHILE/AFTER SHOOTING`, …) on movement/shooting-styled stratagems —
+ * rather than hardcode the full label list, any bold header not WHEN/TARGET/RESTRICTION(S) is
+ * folded into the effect text (prefixed with its own label, since our schema has no field for
+ * it), so no content is silently dropped when Wahapedia introduces another one.
+ */
+function splitSections(bodyHtml: string): {
+  timing: string
+  cond: string | undefined
+  effect: string
+  restrictions: string
+} {
+  const re = /<b>\s*([A-Z][A-Z ]*?)\s*:\s*<\/b>/g
   const marks: { label: string; bodyStart: number; labelStart: number }[] = []
   let m: RegExpExecArray | null
   while ((m = re.exec(bodyHtml))) {
-    marks.push({ label: m[1].toUpperCase(), labelStart: m.index, bodyStart: re.lastIndex })
+    marks.push({ label: m[1].trim(), labelStart: m.index, bodyStart: re.lastIndex })
   }
 
-  const sections: Record<string, string> = {}
+  let timing = ''
+  let cond = ''
+  const effectParts: string[] = []
+  const restrictionsParts: string[] = []
+
   for (let i = 0; i < marks.length; i++) {
     const end = i + 1 < marks.length ? marks[i + 1].labelStart : bodyHtml.length
-    sections[marks[i].label] = htmlToText(bodyHtml.slice(marks[i].bodyStart, end))
+    const text = htmlToText(bodyHtml.slice(marks[i].bodyStart, end))
+    if (!text) continue
+    const label = marks[i].label
+    if (label === 'WHEN') timing = text
+    else if (label === 'TARGET') cond = text
+    else if (label === 'RESTRICTION' || label === 'RESTRICTIONS') restrictionsParts.push(text)
+    else if (label === 'EFFECT') effectParts.push(text)
+    else effectParts.push(`${toTitleCase(label)}: ${text}`)
   }
-  return sections
+
+  return { timing, cond: cond || undefined, effect: effectParts.join(' '), restrictions: restrictionsParts.join(' ') }
 }
 
-/** Parse one `.str10Wrap` card into a `Strat` plus the detachment group it belongs to. */
+/**
+ * Resolve a stratagem card's detachment/group name from its `.str11Type` line. Most cards
+ * follow 10e's "<Detachment> – <Category> Stratagem" shape; 11e also has bare "<Detachment>
+ * Stratagem" cards with no dash (single-category detachments and the universal "Core
+ * Stratagem" marker) — strip the trailing "Stratagem(s)" word instead of dash-splitting for
+ * those so the group name still matches the detachment's real name (and "Core" still hits
+ * `SKIP_GROUPS` in wahapediaCli.ts).
+ */
+function parseGroupName(typeText: string): string {
+  const dashSplit = typeText.split(/\s+[–—-]\s+/)
+  if (dashSplit.length > 1) return dashSplit[0].trim()
+  return typeText.replace(/\s+Stratagems?$/i, '').trim()
+}
+
+/** Parse one `.str11Wrap` card into a `Strat` plus the detachment group it belongs to. */
 function parseCard(card: HTMLElement, source: string): { group: string; strat: Strat } | null {
-  const name = card.querySelector('.str10Name')?.text.trim()
+  const name = textWithoutTrailingMarker(card.querySelector('.str11Name'), '.h_number')
   if (!name) return null
 
-  // "Hallowed Martyrs – Epic Deed Stratagem" → group "Hallowed Martyrs" (drop the category).
-  const typeText = card.querySelector('.str10Type')?.text.trim() ?? ''
-  const group = typeText.split(/\s+[–—-]\s+/)[0].trim()
+  const typeText = card.querySelector('.str11Type')?.text.trim() ?? ''
+  const group = parseGroupName(typeText)
   if (!group) return null
 
-  const cpText = card.querySelector('.str10CP')?.text ?? ''
-  const bodyHtml = card.querySelector('.str10Text')?.innerHTML ?? ''
+  const cpText = card.querySelector('.str11CP')?.text ?? ''
+  const bodyHtml = card.querySelector('.str11Text')?.innerHTML ?? ''
   const s = splitSections(bodyHtml)
 
-  // .str10Legend is Wahapedia's flavour/fluff text — not a mechanical summary.
-  // Leave summary unset here; ingest:summarise generates and writes mechanical summaries.
   const strat: Strat = {
     name: toTitleCase(name),
     cp: parseCp(cpText),
-    timing: s.WHEN ?? '',
-    cond: s.TARGET || undefined,
-    effect: s.EFFECT ?? '',
-    once: parseOnce([s.WHEN, s.RESTRICTIONS, s.EFFECT].filter(Boolean).join(' ')),
+    timing: s.timing,
+    cond: s.cond,
+    effect: s.effect,
+    once: parseOnce([s.timing, s.restrictions, s.effect].filter(Boolean).join(' ')),
     source,
   }
   return { group, strat }
@@ -131,7 +193,7 @@ function parseCard(card: HTMLElement, source: string): { group: string; strat: S
  */
 export function parseStratagems(html: string, source: string): DetachmentStratagems[] {
   const groups = new Map<string, Strat[]>()
-  for (const card of parse(html).querySelectorAll('.str10Wrap')) {
+  for (const card of parse(html).querySelectorAll('.str11Wrap')) {
     const parsed = parseCard(card, source)
     if (!parsed) continue
     const list = groups.get(parsed.group) ?? []
@@ -147,72 +209,77 @@ export async function scrapeFaction(slug: string, source: string): Promise<Detac
 }
 
 // ─────────────────────────────────────────────────────────────────────────
-// Enhancements
+// Real-detachment signal (for stratagem-group synthesis gating)
 //
-// Enhancements live in `<h2>Enhancements</h2>` sections, one per detachment.
-// Each card is a small table whose `<td>` contains:
-//   <ul class="EnhancementsPts"><li><span>NAME</span> <span>N pts</span></li></ul>
-//   <p class="ShowFluff legend2">flavour text…</p>
-//   <p>rules text…</p>
-// Detachment grouping is implicit in document order: each `<h2 class="outline_header">`
-// names the detachment whose enhancement cards follow it, until the next outline header.
+// Every genuine detachment's `<h2 class="outline_header">` heading carries a Detachment
+// Points badge (`<span class="dpPts">`, e.g. "Awakened Dynasty<span class="dpPts">...3DP
+// </span>"); Boarding Action / Crusade-mode alt-game-mode listings don't. This replaces the
+// old 10e "does an enhancement table exist for this name" heuristic now that enhancement
+// text no longer comes from this scrape (see docs/11e-migration-plan.md Phase 6).
 // ─────────────────────────────────────────────────────────────────────────
 
-/** Enhancements for one detachment, keyed by the detachment's display name. */
-export type DetachmentEnhancements = { name: string; enhancements: Rule[] }
+/** Names of every real (non-alt-game-mode) detachment on a faction page. */
+export function parseRealDetachmentNames(html: string): Set<string> {
+  const root = parse(html)
+  const names = new Set<string>()
+  for (const h2 of root.querySelectorAll('h2.outline_header')) {
+    const badge = h2.querySelector('.dpPts')
+    if (!badge) continue
+    const name = textWithoutTrailingMarker(h2, '.dpPts')
+    if (name) names.add(name)
+  }
+  return names
+}
 
-/**
- * Parse one `ul.EnhancementsPts` card into a {@link Rule}. The `<ul>`'s first `<span>` is
- * the name; the rules paragraph is the last non-fluff `<p>` in the same `<td>`.
- */
-function parseEnhancementCard(ul: HTMLElement, source: string): Rule | null {
+// ─────────────────────────────────────────────────────────────────────────
+// Enhancement "Upgrade" subtype marker
+//
+// Enhancement rules text is now BSData-sourced (Phase 4). This scrape's only remaining
+// enhancement-related job is flagging which enhancements are the "Upgrade" subtype (attaches
+// to a unit rather than a Character) via a `<span class="EnhUpgrade">` marker nested in the
+// enhancement's name `<span>` — matched onto the BSData-sourced enhancement by name in
+// wahapediaCli.ts. Detachment grouping is implicit in document order: each `<h2
+// class="outline_header">` names the detachment whose enhancement cards follow it, until the
+// next outline header (same structure the old full-text enhancement scraper relied on).
+// ─────────────────────────────────────────────────────────────────────────
+
+/** Upgrade-subtype enhancement names for one detachment, keyed by the detachment's display name. */
+export type DetachmentEnhancementKinds = { name: string; upgradeNames: string[] }
+
+/** Parse one `ul.EnhancementsPts` card's name and whether it carries the Upgrade marker. */
+function parseEnhancementNameCard(ul: HTMLElement): { name: string; upgrade: boolean } | null {
   const li = ul.querySelector('li')
   if (!li) return null
-  const name = li.querySelector('span')?.text.trim()
+  const nameSpan = li.querySelector('span')
+  if (!nameSpan) return null
+  const marker = nameSpan.querySelector('.EnhUpgrade')
+  const name = textWithoutTrailingMarker(nameSpan, '.EnhUpgrade')
   if (!name) return null
-
-  // The rules paragraph sits in the same <td> as the <ul>. There's also a
-  // fluff <p class="ShowFluff legend2"> we want to skip.
-  const td = ul.closest('td')
-  if (!td) return null
-  const ps = td.querySelectorAll('p')
-  let rulesHtml = ''
-  for (let i = ps.length - 1; i >= 0; i--) {
-    if (!ps[i].classList.contains('ShowFluff')) {
-      rulesHtml = ps[i].innerHTML
-      break
-    }
-  }
-
-  return {
-    name,
-    timing: '',
-    effect: rulesHtml ? htmlToText(rulesHtml) : '',
-    source,
-  }
+  return { name, upgrade: !!marker }
 }
 
 /**
- * Parse all enhancement cards from a faction page's HTML, grouped by detachment in the
- * order they first appear. `source` is the faction display name, recorded on each `Rule`.
+ * Parse all Upgrade-marked enhancement names from a faction page's HTML, grouped by
+ * detachment in the order they first appear. Character-subtype (unmarked) enhancements are
+ * not included — `EnhancementSchema.kind` is absent/undefined for those, the common case.
  */
-export function parseEnhancements(html: string, source: string): DetachmentEnhancements[] {
+export function parseEnhancementKinds(html: string): DetachmentEnhancementKinds[] {
   const root = parse(html)
-  const groups = new Map<string, Rule[]>()
+  const groups = new Map<string, string[]>()
   let currentDet: string | null = null
 
   for (const node of root.querySelectorAll('h2.outline_header, ul.EnhancementsPts')) {
     if (node.tagName === 'H2') {
-      currentDet = node.text.trim()
+      currentDet = textWithoutTrailingMarker(node, '.dpPts') || node.text.trim()
       continue
     }
     if (!currentDet) continue
-    const enh = parseEnhancementCard(node, source)
-    if (!enh) continue
+    const parsed = parseEnhancementNameCard(node)
+    if (!parsed || !parsed.upgrade) continue
     const list = groups.get(currentDet) ?? []
-    list.push(enh)
+    list.push(parsed.name)
     groups.set(currentDet, list)
   }
 
-  return [...groups.entries()].map(([name, enhancements]) => ({ name, enhancements }))
+  return [...groups.entries()].map(([name, upgradeNames]) => ({ name, upgradeNames }))
 }

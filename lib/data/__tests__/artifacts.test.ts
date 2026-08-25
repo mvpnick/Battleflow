@@ -87,12 +87,15 @@ describe('Detachment scoping', () => {
     ...a.detachments,
   ].map((d) => d.name)
 
-  it('gives a divisio chapter only the generic Codex detachments (no chapter-specific)', () => {
-    // Iron Hands has no chapter-specific detachment of its own — just the shared Codex pool.
+  it('gives a divisio chapter the shared Codex pool plus its own single flavoured detachment', () => {
+    // 11e gives every codex-compliant chapter one reskinned variant of a generic detachment
+    // (Iron Hands' "Hammer of Avernii") in addition to the shared Codex pool — unlike 10e,
+    // where these chapters had no detachment of their own at all.
     expect(names(ironHands)).toContain('Gladius Task Force') // shared Codex set
+    expect(names(ironHands)).toContain('Hammer of Avernii') // Iron Hands' own flavoured variant
     expect(names(ironHands)).not.toContain('Liberator Assault Group') // Blood Angels
     expect(names(ironHands)).not.toContain('Unforgiven Task Force') // Dark Angels
-    expect(names(ironHands).length).toBeLessThan(15) // not the 53-detachment union
+    expect(names(ironHands).length).toBeLessThan(20) // not the full multi-chapter union
   })
 
   it('gives a first-founding chapter its own detachments but not other chapters’', () => {
@@ -103,7 +106,7 @@ describe('Detachment scoping', () => {
   })
 
   it('shares the generic Codex set once across all chapters', () => {
-    // The 8 generic detachments live in a shared set, not inline on each chapter artifact.
+    // The generic detachments live in a shared set, not inline on each chapter artifact.
     expect(bloodAngels.sharedDetachments?.length).toBe(1)
     expect(bloodAngels.detachments.map((d) => d.name)).not.toContain('Gladius Task Force')
   })

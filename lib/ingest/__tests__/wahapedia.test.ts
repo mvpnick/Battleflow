@@ -1,18 +1,21 @@
 import { describe, it, expect } from 'vitest'
-import { parseEnhancements } from '../wahapedia'
+import { parseEnhancementKinds, parseRealDetachmentNames, parseStratagems } from '../wahapedia'
+
+// ── parseEnhancementKinds ────────────────────────────────────────────────────
 
 /**
- * Minimal HTML mirroring Wahapedia's faction-page enhancement section. Two
- * detachments, two cards in the first and one in the second, verifies that
- * cards are grouped by the most-recent `h2.outline_header`.
+ * Minimal HTML mirroring Wahapedia's 11e faction-page enhancement section. Two
+ * detachments; the first has one Upgrade-marked card and one plain Character card, the
+ * second has one plain card. Verifies grouping by the most-recent `h2.outline_header` and
+ * that only Upgrade-marked names are returned.
  */
-const HTML = `
+const ENH_HTML = `
 <html><body>
-  <h2 class="outline_header">Daemonic Incursion</h2>
+  <h2 class="outline_header">Daemonic Incursion<span class="dpPts">2DP</span></h2>
   <h2>Detachment Rule</h2>
   <h2>Enhancements</h2>
   <div><table><tbody><tbody><tr><td class="td_w">
-    <ul class="EnhancementsPts"><li><span>The Everstave</span> <span>25 pts</span></li></ul>
+    <ul class="EnhancementsPts"><li><span>The Everstave<span class="EnhUpgrade">UPGRADE</span></span> <span>25 pts</span></li></ul>
     <p class="ShowFluff legend2">Flavour text.</p>
     <p><b>TZEENTCH</b> model only. Add 1 to Strength.</p>
   </td></tr></tbody></tbody></table></div>
@@ -22,7 +25,7 @@ const HTML = `
     <p>KHORNE only. Re-roll wounds.</p>
   </td></tr></tbody></tbody></table></div>
 
-  <h2 class="outline_header">Scintillating Legion</h2>
+  <h2 class="outline_header">Scintillating Legion<span class="dpPts">1DP</span></h2>
   <h2>Enhancements</h2>
   <div><table><tbody><tbody><tr><td class="td_w">
     <ul class="EnhancementsPts"><li><span>Inescapable Eye</span> <span>10 pts</span></li></ul>
@@ -32,26 +35,113 @@ const HTML = `
 </body></html>
 `
 
-describe('parseEnhancements', () => {
-  it('groups enhancement cards under the preceding outline_header', () => {
-    const groups = parseEnhancements(HTML, 'Chaos Daemons')
-    expect(groups).toHaveLength(2)
+describe('parseEnhancementKinds', () => {
+  it('returns only Upgrade-marked enhancement names, grouped by detachment', () => {
+    const groups = parseEnhancementKinds(ENH_HTML)
+    expect(groups).toHaveLength(1)
     expect(groups[0].name).toBe('Daemonic Incursion')
-    expect(groups[0].enhancements.map(e => e.name)).toEqual(['The Everstave', "A'rgath"])
-    expect(groups[1].name).toBe('Scintillating Legion')
-    expect(groups[1].enhancements.map(e => e.name)).toEqual(['Inescapable Eye'])
+    expect(groups[0].upgradeNames).toEqual(['The Everstave'])
   })
 
-  it('extracts rules text from the non-fluff <p>, ignoring ShowFluff', () => {
-    const [{ enhancements }] = parseEnhancements(HTML, 'Chaos Daemons')
-    expect(enhancements[0].effect).toBe('TZEENTCH model only. Add 1 to Strength.')
-    expect(enhancements[0].effect).not.toMatch(/flavour/i)
+  it('strips the DP badge from the detachment name and the UPGRADE marker from the enhancement name', () => {
+    const groups = parseEnhancementKinds(ENH_HTML)
+    expect(groups[0].name).not.toMatch(/DP/)
+    expect(groups[0].upgradeNames[0]).not.toMatch(/UPGRADE/)
   })
 
-  it('stamps the source on every enhancement', () => {
-    const groups = parseEnhancements(HTML, 'Chaos Daemons')
-    for (const g of groups) {
-      for (const e of g.enhancements) expect(e.source).toBe('Chaos Daemons')
-    }
+  it('omits detachments with no Upgrade-marked cards', () => {
+    const groups = parseEnhancementKinds(ENH_HTML)
+    expect(groups.map((g) => g.name)).not.toContain('Scintillating Legion')
+  })
+})
+
+// ── parseRealDetachmentNames ─────────────────────────────────────────────────
+
+const REAL_DET_HTML = `
+<html><body>
+  <h2 class="outline_header">Awakened Dynasty<span class="dpPts"><img class="tooltip dpFD" src="/x.png">3DP</span></h2>
+  <h2 class="outline_header">Annihilation Legion<span class="dpPts">2DP</span></h2>
+  <h2 class="outline_header"><img class="tooltip logo3_11" src="/y.png">Boarding Actions</h2>
+</body></html>
+`
+
+describe('parseRealDetachmentNames', () => {
+  it('collects names of headers carrying a DP badge', () => {
+    const names = parseRealDetachmentNames(REAL_DET_HTML)
+    expect(names).toEqual(new Set(['Awakened Dynasty', 'Annihilation Legion']))
+  })
+
+  it('excludes alt-game-mode headers with no DP badge', () => {
+    const names = parseRealDetachmentNames(REAL_DET_HTML)
+    expect(names.has('Boarding Actions')).toBe(false)
+  })
+})
+
+// ── parseStratagems ───────────────────────────────────────────────────────────
+
+function stratCard(name: string, type: string, cp: string, bodyHtml: string): string {
+  return `
+  <div class="str11Wrap">
+    <div class="str11Name">${name}</div>
+    <div class="str11Type">${type}</div>
+    <div class="str11CP">${cp}</div>
+    <div class="str11Text">${bodyHtml}</div>
+  </div>`
+}
+
+describe('parseStratagems', () => {
+  it('groups cards by detachment name split from the dashed type line', () => {
+    const html = stratCard(
+      'PROTOCOL OF THE ETERNAL REVENANT',
+      'Awakened Dynasty – Epic Deed Stratagem',
+      '1CP',
+      '<b>WHEN:</b> Any phase.<br><br><b>TARGET:</b> One model.<br><br><b>EFFECT:</b> Do the thing.',
+    )
+    const groups = parseStratagems(html, 'Necrons')
+    expect(groups).toHaveLength(1)
+    expect(groups[0].name).toBe('Awakened Dynasty')
+    expect(groups[0].stratagems[0]).toMatchObject({
+      name: 'Protocol of the Eternal Revenant',
+      cp: 1,
+      timing: 'Any phase.',
+      cond: 'One model.',
+      effect: 'Do the thing.',
+    })
+  })
+
+  it('strips a trailing "Stratagem" suffix when the type line has no dash (11e single-category detachments)', () => {
+    const html = stratCard(
+      'HAND OF THE DYNASTY',
+      'Hand of the Dynasty Stratagem',
+      '1CP',
+      '<b>WHEN:</b> Any phase.<br><br><b>EFFECT:</b> Do the thing.',
+    )
+    const groups = parseStratagems(html, 'Necrons')
+    expect(groups[0].name).toBe('Hand of the Dynasty')
+  })
+
+  it('strips a trailing rule-reference marker (h_number) fused onto the card name', () => {
+    const html = stratCard(
+      'COMMAND RE-ROLL<span class="h_number">15.02</span>',
+      'Core Stratagem',
+      '1CP',
+      '<b>WHEN:</b> Any phase.<br><br><b>EFFECT:</b> Re-roll.',
+    )
+    const groups = parseStratagems(html, 'Necrons')
+    expect(groups[0].stratagems[0].name).toBe('Command Re-roll')
+  })
+
+  it('folds unrecognized bold section labels (11e movement/shooting sub-headers) into effect instead of dropping them', () => {
+    const html = stratCard(
+      'SNAP SHOOTING',
+      'Reaction Stratagem',
+      '1CP',
+      '<b>ELIGIBLE IF:</b> As stated in the rule.<br><b>EFFECT:</b> Your unit shoots.<br><b>WHILE SHOOTING:</b> Only one target.',
+    )
+    const groups = parseStratagems(html, 'Necrons')
+    const effect = groups[0].stratagems[0].effect
+    expect(effect).toContain('Eligible If: As stated in the rule.')
+    expect(effect).toContain('Your unit shoots.')
+    expect(effect).toContain('While Shooting: Only one target.')
   })
 })

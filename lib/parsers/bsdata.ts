@@ -135,6 +135,8 @@ export interface SelectionEntry {
   type: string
   hidden?: string
   import?: string
+  /** Free-text annotation. 11e uses it on enhancement entries to name the owning detachment. */
+  comment?: string
   profiles?: { profile?: Profile[] }
   rules?: { rule?: RuleNode[] }
   infoLinks?: { infoLink?: InfoLink[] }

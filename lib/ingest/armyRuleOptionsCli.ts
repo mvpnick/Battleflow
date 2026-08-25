@@ -1,5 +1,5 @@
 import type { DataManifest } from '../dataModel'
-import { parseCatalogue } from '../parsers/bsdata'
+import { parseCatalogue11 } from '../parsers/bsdata11'
 import { fetchRaw } from './fetch'
 import { ARMY_RULE_OPTION_TABLES, attachArmyRuleOptions } from './armyRuleOptions'
 import {
@@ -65,9 +65,11 @@ async function main() {
 
   for (const f of targets) {
     // The catalogue's BSData `name` is exactly its filename stem (see ManifestFaction /
-    // makeFileFinder's `${name}.cat` guess in cli.ts) — no chain-walking needed, the
+    // makeFileFinder's `${name}.json` guess in cli.ts) — no chain-walking needed, the
     // reference table lives in the faction's own catalogue.
-    const catalogue = parseCatalogue(await fetchRaw(manifest.bsDataCommit, `${f.factionName}.cat`))
+    const catalogue = parseCatalogue11(
+      JSON.parse(await fetchRaw(manifest.bsDataCommit, `${f.factionName}.json`)),
+    )
     const artifact = await readArtifact(f.factionId)
     attachArmyRuleOptions(artifact, catalogue)
 
